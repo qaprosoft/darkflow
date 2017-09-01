@@ -1,0 +1,5 @@
+person
+dog
+hand
+cat
+table

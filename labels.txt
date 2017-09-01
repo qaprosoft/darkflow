@@ -1,0 +1,6 @@
+button
+checkbox
+text_field
+radio
+select
+label
