@@ -102,7 +102,8 @@ def shuffle(self):
     batch_per_epoch = int(size / batch)
 
     for i in range(self.FLAGS.epoch):
-        start = time.time()        shuffle_idx = perm(np.arange(size))
+        start = time.time()
+        shuffle_idx = perm(np.arange(size))
         for b in range(batch_per_epoch):
             # yield these
             x_batch = list()
