@@ -1,6 +1,8 @@
 
 # Python bytecode
 *.pyc
+__pycache__
+
 
 # Weight files
 bin/
