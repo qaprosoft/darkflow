@@ -20,5 +20,7 @@ ln -s -f $ALICE_HOME/data/darkflow/ckpt $DARKFLOW_HOME
 ln -s -f $ALICE_HOME/data/darkflow/cfg $DARKFLOW_HOME
 
 
+echo making symlinks for all labels files
+find $ALICE_HOME/data/darkflow -name 'labels-*.txt' -exec ln -vsf "{}" $DARKFLOW_HOME ';'
 
 
