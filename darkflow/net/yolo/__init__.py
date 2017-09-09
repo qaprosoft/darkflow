@@ -1,5 +1,5 @@
 from . import train
-from . import test
+from . import predict
 from . import data
 from . import misc
 import numpy as np
@@ -15,10 +15,9 @@ def constructor(self, meta, FLAGS):
 		b = 2 - indx / base2
 		r = 2 - (indx % base2) / base
 		g = 2 - (indx % base2) % base
-		return (b*20 , r * 60, g * 150)
-
-	# load label into meta
-	misc.labels(meta, FLAGS)
+		return (b * 127, r * 127, g * 127)
+	if 'labels' not in meta:
+		misc.labels(meta, FLAGS) #We're not loading from a .pb so we do need to load the labels
 	assert len(meta['labels']) == meta['classes'], (
 		'labels.txt and {} indicate' + ' '
 		'inconsistent class numbers'

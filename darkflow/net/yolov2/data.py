@@ -1,6 +1,6 @@
-from darkflow.utils.pascal_voc_clean_xml import pascal_voc_clean_xml
+from ...utils.pascal_voc_clean_xml import pascal_voc_clean_xml
 from numpy.random import permutation as perm
-from ..yolo.test import preprocess
+from ..yolo.predict import preprocess
 from ..yolo.data import shuffle
 from copy import deepcopy
 import pickle
@@ -17,7 +17,6 @@ def _batch(self, chunk):
     labels = meta['labels']
     
     H, W, _ = meta['out_size']
-    #print (H, W) 
     C, B = meta['classes'], meta['num']
     anchors = meta['anchors']
 
@@ -26,7 +25,7 @@ def _batch(self, chunk):
     allobj = deepcopy(allobj_)
     path = os.path.join(self.FLAGS.dataset, jpg)
     img = self.preprocess(path, allobj)
-    #print (w, h)
+
     # Calculate regression target
     cellx = 1. * w / W
     celly = 1. * h / H

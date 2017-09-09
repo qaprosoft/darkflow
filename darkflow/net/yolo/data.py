@@ -1,12 +1,11 @@
-from darkflow.utils.pascal_voc_clean_xml import pascal_voc_clean_xml
+from ...utils.pascal_voc_clean_xml import pascal_voc_clean_xml
 from numpy.random import permutation as perm
-from .test import preprocess
+from .predict import preprocess
 # from .misc import show
 from copy import deepcopy
 import pickle
 import numpy as np
-import os
-import time 
+import os 
 
 def parse(self, exclusive = False):
     meta = self.meta
@@ -103,8 +102,7 @@ def shuffle(self):
     batch_per_epoch = int(size / batch)
 
     for i in range(self.FLAGS.epoch):
-        start = time.time()
-        shuffle_idx = perm(np.arange(size))
+        start = time.time()        shuffle_idx = perm(np.arange(size))
         for b in range(batch_per_epoch):
             # yield these
             x_batch = list()
