@@ -37,7 +37,8 @@ def train(self):
     loss_op = self.framework.loss
 
     for i, (x_batch, datum) in enumerate(batches):
-        start = time.time()        if not i: self.say(train_stats.format(
+        start = time.time()
+        if not i: self.say(train_stats.format(
             self.FLAGS.lr, self.FLAGS.batch,
             self.FLAGS.epoch, self.FLAGS.save
         ))
