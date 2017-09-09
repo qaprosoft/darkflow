@@ -102,7 +102,6 @@ def shuffle(self):
     batch_per_epoch = int(size / batch)
 
     for i in range(self.FLAGS.epoch):
-        start = time.time()
         shuffle_idx = perm(np.arange(size))
         for b in range(batch_per_epoch):
             # yield these
@@ -126,6 +125,5 @@ def shuffle(self):
             
             x_batch = np.concatenate(x_batch, 0)
             yield x_batch, feed_batch
-        end = time.time()
-        print('Finish {} epoch(es) in {}'.format(i + 1, end - start))
+        print('Finish {} epoch(es)'.format(i + 1))
 
