@@ -3,7 +3,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import pickle
-import time
+from multiprocessing.pool import ThreadPool
 
 train_stats = (
     'Training statistics: \n'
@@ -12,6 +12,7 @@ train_stats = (
     '\tEpoch number  : {}\n'
     '\tBackup every  : {}'
 )
+pool = ThreadPool()
 
 def _save_ckpt(self, step, loss_profile):
     file = '{}-{}{}'
@@ -36,8 +37,7 @@ def train(self):
     loss_op = self.framework.loss
 
     for i, (x_batch, datum) in enumerate(batches):
-        start = time.time()
-        if not i: self.say(train_stats.format(
+        start = time.time()        if not i: self.say(train_stats.format(
             self.FLAGS.lr, self.FLAGS.batch,
             self.FLAGS.epoch, self.FLAGS.save
         ))
@@ -59,10 +59,6 @@ def train(self):
         self.writer.add_summary(fetched[2], step_now)
 
         form = 'step {} - loss {} - moving ave loss {} - time {}'
-        #form_2 = "step {} - loss {} - moving ave loss {}/n{} steps tooks {}"
-        #n_steps = 15
-        #if (step_now % n_steps ) == 0:
-           # self.say(form_2.format(step_now, loss, loss_mva, n_steps, (end-start)))
         self.say(form.format(step_now, loss, loss_mva, end-start))
         profile += [(loss, loss_mva)]
 
@@ -103,11 +99,11 @@ def return_predict(self, im):
 import math
 
 def predict(self):
-    inp_path = self.FLAGS.test
+    inp_path = self.FLAGS.imgdir
     all_inps = os.listdir(inp_path)
     all_inps = [i for i in all_inps if self.framework.is_inp(i)]
     if not all_inps:
-        msg = 'Failed to find any test files in {} .'
+        msg = 'Failed to find any images in {} .'
         exit('Error: {}'.format(msg.format(inp_path)))
 
     batch = min(self.FLAGS.batch, len(all_inps))
@@ -141,9 +137,10 @@ def predict(self):
         # Post processing
         self.say('Post processing {} inputs ...'.format(len(inp_feed)))
         start = time.time()
-        for i, prediction in enumerate(out):
-            self.framework.postprocess(prediction,
-                os.path.join(inp_path, this_batch[i]))
+        pool.map(lambda p: (lambda i, prediction:
+            self.framework.postprocess(
+               prediction, os.path.join(inp_path, this_batch[i])))(*p),
+            enumerate(out))
         stop = time.time(); last = stop - start
 
         # Timing
