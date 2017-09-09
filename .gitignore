@@ -38,3 +38,7 @@ summary/
 
 # Checkpoint files
 ckpt/
+
+# Config files
+cfg/
+
