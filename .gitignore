@@ -37,8 +37,8 @@ build/
 summary/
 
 # Checkpoint files
-ckpt/
+ckpt
 
 # Config files
-cfg/
+cfg
 
