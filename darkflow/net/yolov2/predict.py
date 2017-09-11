@@ -3,19 +3,138 @@ import math
 import cv2
 import os
 import json
-#from scipy.special import expit
-#from utils.box import BoundBox, box_iou, prob_compare
-#from utils.box import prob_compare2, box_intersection
 from ...utils.box import BoundBox
 from ...cython_utils.cy_yolo2_findboxes import box_constructor
+from . import OCR
+from math import sqrt
+from joblib import Parallel, delayed
+import multiprocessing
+
+def recognize_label(dictt, distance_dict, ocr, image):
+
+	x1_label = dictt["topleft"]["x"]
+	#print (x1_label)
+	y1_label = dictt["topleft"]["y"]
+	#print (y1_label)
+	x2_label = dictt["bottomright"]["x"]
+	#print (x2_label)
+	y2_label = dictt["bottomright"]["y"]
+	#print (y2_label)
+	#print ("14")
+	label_coordinate = (x1_label, y1_label, x2_label, y2_label)
+
+	print ("1")
+	#print (distance_dict)
+	if label_coordinate in distance_dict:
+	    print ("3")
+	    caption_coordinate = distance_dict[label_coordinate]
+	    recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
+	    dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
+	else:
+
+		caption_coordinate = label_coordinate
+
+		recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
+		print ("15")
+		dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
+	#if dictt["label"] != "label":
+	return dictt
+
+
+def _get_center_coordinate(coordinates):
+    x1 = coordinates[0]
+    y1 = coordinates[1]
+    x2 = coordinates[2]
+    y2 = coordinates[3]
+
+    x_center = int((x1 + x2)/2)
+    y_center = int((y1 + y2)/2)
+
+    return x_center, y_center
+
+
+def _get_distance(coordinate_1, coordinate_2):
+    x_center_1, y_center_1 = _get_center_coordinate(coordinate_1)
+    x_center_2, y_center_2 = _get_center_coordinate(coordinate_2)
+
+    distance = sqrt(abs(x_center_1 - x_center_2)**2 + abs(y_center_2 - y_center_1)**2)
+
+    return int(distance)
+
+
+def _get_min_distance_coordinates(config, coordinate, _dict, _class="label"):
+    """
+        Count distances between given coordinate and rest coordinates
+        Args:
+            config - json file
+            coordinate - (x1, y1, x2, y2)
+            _dict - current dict of nearest coordinates to the caption
+            label - label of coordinate
+
+        return coordinate of the nearest label to the current caption
+    """
+    distances = {} # (coordinate): distance
+    for dictt in config:
+        if dictt["label"] != _class:
+            x1 = dictt["topleft"]["x"]
+            y1 = dictt["topleft"]["y"]
+            x2 = dictt["bottomright"]["x"]
+            y2 = dictt["bottomright"]["y"]
+            caption_coordinate = coordinate
+            label_coordinates = (x1, y1, x2, y2)
+
+            distance = _get_distance(caption_coordinate, label_coordinates)
+            distances[label_coordinates] = distance
+
+    sorted_values = distances.values()
+    if not sorted_values:
+        return []
+
+    sorted_values = sorted(sorted_values)
+    #print ("config {}".format(config))
+    for distance in sorted_values:
+
+        min_distance = distance
+        min_distance_coordinates = list(distances.keys())[list(distances.values()).index(min_distance)]
+        if min_distance_coordinates in _dict:
+            continue
+        else:
+            break
+
+    return min_distance_coordinates
+
+
+def get_distance_dict(config, _class="label"):
+    """
+        returns dict of captions with coordinates of the nearest label.
+        Will return emty dict if there is no _class elements in the image
+        length of the dict == number of _class elements in the config
+    """
+    distance_dict = {} # key - caption coordinate, value - coordinate of the nearest label
+    for dictt in config:
+        if dictt["label"] == _class:
+            x1 = dictt["topleft"]["x"]
+            y1 = dictt["topleft"]["y"]
+            x2 = dictt["bottomright"]["x"]
+            y2 = dictt["bottomright"]["y"]
+            caption_coordinate = (x1, y1, x2, y2)
+
+            min_distance_coordinate = _get_min_distance_coordinates(config, caption_coordinate, distance_dict)
+            if not min_distance_coordinate:
+                 return {}
+            distance_dict[min_distance_coordinate] = caption_coordinate
+    return distance_dict
+
 
 def expit(x):
 	return 1. / (1. + np.exp(-x))
+
 
 def _softmax(x):
     e_x = np.exp(x - np.max(x))
     out = e_x / e_x.sum()
     return out
+
 
 def findboxes(self, net_out):
 	# meta
@@ -23,6 +142,7 @@ def findboxes(self, net_out):
 	boxes = list()
 	boxes=box_constructor(meta,net_out)
 	return boxes
+
 
 def postprocess(self, net_out, im, save = True):
 	"""
@@ -39,7 +159,7 @@ def postprocess(self, net_out, im, save = True):
 		imgcv = cv2.imread(im)
 	else: imgcv = im
 	h, w, _ = imgcv.shape
-	
+
 	resultsForJSON = []
 	for b in boxes:
 		boxResults = self.process_box(b, h, w, threshold)
@@ -61,6 +181,23 @@ def postprocess(self, net_out, im, save = True):
 
 	outfolder = os.path.join(self.FLAGS.imgdir, 'out')
 	img_name = os.path.join(outfolder, os.path.basename(im))
+
+
+	# Adding caption tag
+	ocr = OCR.OCR()
+	distance_dict = get_distance_dict(resultsForJSON)
+	resultsForJSON_v2 = []
+	if resultsForJSON:
+		#print ("12")
+		for dictt in resultsForJSON:
+			print ("13")
+			print (dictt)
+			resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
+		"""
+		resultsForJSON_v2 = Parallel(n_jobs=8, backend="threading")(delayed(recognize_label)(dictt,
+            distance_dict, ocr, imgcv) for dictt in resultsForJSON)
+		"""
+
 	if self.FLAGS.json:
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"

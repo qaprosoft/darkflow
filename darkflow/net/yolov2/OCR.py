@@ -23,6 +23,7 @@ class OCR:
 
     def _get_image_by_basename(self, basename, image_folder):
         for file in os.listdir(image_folder):
+            print ("1-6")
             file_base = os.path.basename(file).rsplit(".", 1)[0]
             if file_base == basename:
                 return file
@@ -42,16 +43,17 @@ class OCR:
         y1 = coordinates[1]
         x2 = coordinates[2]
         y2 = coordinates[3]
-
+        print ("1-1")
         if image is None:
             try:
                 image_name = self._get_image_by_basename(basename, image_folder)
+                print ("1-5")
                 #print "image_name {}".format(image_name)
             except ValueError:
                 print ("No image {} in image folder".format(basename))
 
             image = cv2.imread(image_name)
-
+            print ("1-2")
             if type(image) is type(None):
                 return "None"
 
@@ -63,7 +65,7 @@ class OCR:
         image = np.array(resized)
         ###
         image = threshold_sauvola(image, window_size=3, k=0.01)
-
+        print ("1-4")
         ###
         image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
 
@@ -71,6 +73,6 @@ class OCR:
         image = cv2.threshold(image, 0, 255,cv2.THRESH_TOZERO | cv2.THRESH_OTSU)[1]
 
         pil_img = Image.fromarray(image.astype(np.uint8))
-
+        print ("1-4")
         #cv2.imwrite(filename=save_folder+i, img=image)
         return pts.image_to_string(image=pil_img)
