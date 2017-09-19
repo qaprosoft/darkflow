@@ -23,10 +23,10 @@ def recognize_label(dictt, distance_dict, ocr, image):
 	#print ("14")
 	label_coordinate = (x1_label, y1_label, x2_label, y2_label)
 
-	print ("1")
+	#print ("1")
 	#print (distance_dict)
 	if label_coordinate in distance_dict:
-	    print ("3")
+	    #print ("3")
 	    caption_coordinate = distance_dict[label_coordinate]
 	    recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
 	    dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
@@ -35,7 +35,7 @@ def recognize_label(dictt, distance_dict, ocr, image):
 		caption_coordinate = label_coordinate
 
 		recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-		print ("15")
+		#print ("15")
 		dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
 	#if dictt["label"] != "label":
 	return dictt
@@ -190,8 +190,8 @@ def postprocess(self, net_out, im, save = True):
 	if resultsForJSON:
 		#print ("12")
 		for dictt in resultsForJSON:
-			print ("13")
-			print (dictt)
+			#print ("13")
+			#print (dictt)
 			resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
 		"""
 		resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
