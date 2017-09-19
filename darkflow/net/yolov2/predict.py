@@ -166,7 +166,7 @@ def postprocess(self, net_out, im, save = True):
 		if boxResults is None:
 			continue
 		left, right, top, bot, mess, max_indx, confidence = boxResults
-		thick = int((h + w) // 300)
+		thick = 2 #int((h + w) // 300)
 		if self.FLAGS.json:
 			resultsForJSON.append({"label": mess, "confidence": float('%.2f' % confidence), "topleft": {"x": left, "y": top}, "bottomright": {"x": right, "y": bot}})
 			continue
@@ -175,7 +175,7 @@ def postprocess(self, net_out, im, save = True):
 			(left, top), (right, bot),
 			colors[max_indx], thick)
 		cv2.putText(imgcv, mess, (left, top - 12),
-			0, 1e-3 * h, colors[max_indx],thick//3)
+			0, 1e-3 * h, colors[max_indx],thick - 1//3)
 
 	if not save: return imgcv
 
@@ -194,7 +194,7 @@ def postprocess(self, net_out, im, save = True):
 			print (dictt)
 			resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
 		"""
-		resultsForJSON_v2 = Parallel(n_jobs=8, backend="threading")(delayed(recognize_label)(dictt,
+		resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
             distance_dict, ocr, imgcv) for dictt in resultsForJSON)
 		"""
 

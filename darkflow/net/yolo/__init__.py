@@ -15,7 +15,7 @@ def constructor(self, meta, FLAGS):
 		b = 2 - indx / base2
 		r = 2 - (indx % base2) / base
 		g = 2 - (indx % base2) % base
-		return (b * 127, r * 127, g * 127)
+		return (b * 20, r * 60, g * 150)
 	if 'labels' not in meta:
 		misc.labels(meta, FLAGS) #We're not loading from a .pb so we do need to load the labels
 	assert len(meta['labels']) == meta['classes'], (

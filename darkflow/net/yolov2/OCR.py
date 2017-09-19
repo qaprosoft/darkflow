@@ -58,7 +58,7 @@ class OCR:
                 return "None"
 
         image = image[y1:y2,x1:x2]
-
+        print ("x1 {}, x2 {}, y1 {}, y2 {}".format(x1, x2, y1, y2))
         new_size = (image.shape[1]*5, image.shape[0]*5)
         pil_img = Image.fromarray(image)
         resized = pil_img.resize(new_size, resample=Image.LANCZOS)
