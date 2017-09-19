@@ -15,6 +15,9 @@ echo DARKFLOW_HOME $DARKFLOW_HOME
 export ALICE_HOME=$1
 echo ALICE_HOME: $ALICE_HOME
 
+# build the Cython extensions in place.
+python3 setup.py build_ext --inplace
+
 
 ln -s -f $ALICE_HOME/data/darkflow/ckpt $DARKFLOW_HOME
 ln -s -f $ALICE_HOME/data/darkflow/cfg $DARKFLOW_HOME
