@@ -242,12 +242,12 @@ def postprocess(self, net_out, im, save = True):
 	ocr = OCR.OCR()
 	distance_dict = get_distance_dict(resultsForJSON)
 	resultsForJSON_v2 = []
-	#if resultsForJSON:
+	if resultsForJSON:
 		#print ("12")
-		#for dictt in resultsForJSON:
+		for dictt in resultsForJSON:
             # print ("13")
             # print (dictt)
-			#resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
+			resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
 
 		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON)
