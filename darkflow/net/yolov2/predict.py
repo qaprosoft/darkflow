@@ -145,18 +145,18 @@ def findboxes(self, net_out):
 
 
 def find_labels_for_controls(JSONResult):
-	delta = 10
-	labels = []
-	controls = []
-	for item in JSONResult:
-		if item['label'] == 'label': labels.append(item)
-		else: controls.append(item)
-	for control in controls:
-		label = find_left_label(control, labels, delta)
-		if label is None: label = find_top_label(control, labels, delta)
-		if label is None: label = find_right_label(control, labels, delta)
-		if label is not None:
-			control['caption'] = label['caption']
+    delta = 10
+    labels = []
+    controls = []
+    for item in JSONResult:
+        if item['label'] == 'label': labels.append(item)
+        else: controls.append(item)
+    for control in controls:
+        label = find_left_label(control, labels, delta)
+        if label is None: label = find_top_label(control, labels, delta)
+        if label is None: label = find_right_label(control, labels, delta)
+        if label is not None:
+            control['caption'] = label['caption']
 
 
 
@@ -177,7 +177,7 @@ def find_top_label(control, labels, delta):
 				return label
 		else:
 			continue
-	return None
+    return None
 
 
 def find_right_label(control, labels, delta):
