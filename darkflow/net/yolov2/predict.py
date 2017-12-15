@@ -144,6 +144,52 @@ def findboxes(self, net_out):
 	return boxes
 
 
+def find_labels_for_controls(JSONResult):
+	delta = 10
+	labels = []
+	controls = []
+	for item in JSONResult:
+		if item['label'] == 'label': labels.append(item)
+		else: controls.append(item)
+	for control in controls:
+		label = find_left_label(control, labels, delta)
+		if label is None: label = find_top_label(control, labels, delta)
+		if label is None: label = find_right_label(control, labels, delta)
+		if label is not None:
+			control['caption'] = label['caption']
+
+
+
+def find_left_label(control, labels, delta):
+	for label in labels:
+		if (control['bottomright']['y'] + delta > label['bottomright']['y']) and (label['bottomright']['y'] > control['bottomright']['y'] - delta):
+			if (control['topleft']['x'] + delta > label['bottomright']['x']) and (label['bottomright']['x'] > control['topleft']['x'] - delta):
+				return label
+		else:
+			continue
+	return None
+
+
+def find_top_label(control, labels, delta):
+    for label in labels:
+		if (control['topleft']['x'] + delta > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta):
+			if (control['topleft']['y'] + delta > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta):
+				return label
+		else:
+			continue
+	return None
+
+
+def find_right_label(control, labels, delta):
+	for label in labels:
+		if (control['topleft']['y'] + delta > label['topleft']['y']) and (label['topleft']['y'] > control['topleft']['y'] - delta):
+			if (control['bottomright']['x'] + delta > label['topleft']['x']) and (label['topleft']['x'] > control['bottomright']['x'] - delta):
+				return label
+		else:
+			continue
+	return None
+
+
 def postprocess(self, net_out, im, save = True):
 	"""
 	Takes net output, draw net_out, save to disk
@@ -197,6 +243,8 @@ def postprocess(self, net_out, im, save = True):
 		resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
             distance_dict, ocr, imgcv) for dictt in resultsForJSON)
 		"""
+	if resultsForJSON:
+		find_labels_for_controls(resultsForJSON)
 
 	if self.FLAGS.json:
 		textJSON = json.dumps(resultsForJSON)
