@@ -146,11 +146,11 @@ def findboxes(self, net_out):
 
 def find_labels_for_controls(JSONResult):
     delta_left_x = 30
-    delta_left_y = 3
+    delta_left_y = 5
     delta_top_x = 5
     delta_top_y = 5
     delta_right_x = 30
-    delta_right_y = 3
+    delta_right_y = 5
     labels = []
     controls = []
     for item in JSONResult:
