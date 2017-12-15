@@ -2001,7 +2001,7 @@ static const char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cyt
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
 static const char __pyx_k_strided_and_direct_or_indirect[] = "<strided and direct or indirect>";
-static const char __pyx_k_home_ubuntu_darkflow_latest_dar[] = "/home/ubuntu/darkflow_latest/darkflow/darkflow/cython_utils/cy_yolo_findboxes.pyx";
+static const char __pyx_k_home_ubuntu_tools_darkflow_dark[] = "/home/ubuntu/tools/darkflow/darkflow/cython_utils/cy_yolo_findboxes.pyx";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_unknown_dtype_code_in_numpy_pxd[] = "unknown dtype code in numpy.pxd (%d)";
 static const char __pyx_k_Buffer_view_does_not_expose_stri[] = "Buffer view does not expose strides";
@@ -2076,7 +2076,7 @@ static PyObject *__pyx_n_s_fortran;
 static PyObject *__pyx_n_u_fortran;
 static PyObject *__pyx_kp_s_got_differing_extents_in_dimensi;
 static PyObject *__pyx_n_s_grid;
-static PyObject *__pyx_kp_s_home_ubuntu_darkflow_latest_dar;
+static PyObject *__pyx_kp_s_home_ubuntu_tools_darkflow_dark;
 static PyObject *__pyx_n_s_id;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_itemsize;
@@ -18221,7 +18221,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_u_fortran, __pyx_k_fortran, sizeof(__pyx_k_fortran), 0, 1, 0, 1},
   {&__pyx_kp_s_got_differing_extents_in_dimensi, __pyx_k_got_differing_extents_in_dimensi, sizeof(__pyx_k_got_differing_extents_in_dimensi), 0, 0, 1, 0},
   {&__pyx_n_s_grid, __pyx_k_grid, sizeof(__pyx_k_grid), 0, 0, 1, 1},
-  {&__pyx_kp_s_home_ubuntu_darkflow_latest_dar, __pyx_k_home_ubuntu_darkflow_latest_dar, sizeof(__pyx_k_home_ubuntu_darkflow_latest_dar), 0, 0, 1, 0},
+  {&__pyx_kp_s_home_ubuntu_tools_darkflow_dark, __pyx_k_home_ubuntu_tools_darkflow_dark, sizeof(__pyx_k_home_ubuntu_tools_darkflow_dark), 0, 0, 1, 0},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_itemsize, __pyx_k_itemsize, sizeof(__pyx_k_itemsize), 0, 0, 1, 1},
@@ -18544,7 +18544,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__23 = PyTuple_Pack(18, __pyx_n_s_meta, __pyx_n_s_net_out, __pyx_n_s_threshold, __pyx_n_s_sqrt, __pyx_n_s_C, __pyx_n_s_B, __pyx_n_s_S, __pyx_n_s_SS, __pyx_n_s_prob_size, __pyx_n_s_conf_size, __pyx_n_s_grid, __pyx_n_s_b, __pyx_n_s_class_loop, __pyx_n_s_boxes, __pyx_n_s_probs, __pyx_n_s_confs, __pyx_n_s_coords, __pyx_n_s_final_probs); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(3, 0, 18, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_ubuntu_darkflow_latest_dar, __pyx_n_s_yolo_box_constructor, 14, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(3, 0, 18, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_ubuntu_tools_darkflow_dark, __pyx_n_s_yolo_box_constructor, 14, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 14, __pyx_L1_error)
 
   /* "View.MemoryView":282
  *         return self.name
