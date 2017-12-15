@@ -145,7 +145,7 @@ def findboxes(self, net_out):
 
 
 def find_labels_for_controls(JSONResult):
-    delta_left_x = 100
+    delta_left_x = 50
     delta_left_y = 5
     delta_top_x = 5
     delta_top_y = 5
@@ -156,7 +156,7 @@ def find_labels_for_controls(JSONResult):
     for item in JSONResult:
         if item['label'] == 'label':
             labels.append(item)
-        else:
+        elif item['label'] != 'button':
             controls.append(item)
     for control in controls:
         label = find_left_label(control, labels, delta_left_x, delta_left_y)
