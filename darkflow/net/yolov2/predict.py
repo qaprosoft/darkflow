@@ -145,45 +145,54 @@ def findboxes(self, net_out):
 
 
 def find_labels_for_controls(JSONResult):
-    delta = 10
+    delta_left_x = 30
+    delta_left_y = 3
+    delta_top_x = 5
+    delta_top_y = 5
+    delta_right_x = 30
+    delta_right_y = 3
     labels = []
     controls = []
     for item in JSONResult:
-        if item['label'] == 'label': labels.append(item)
-        else: controls.append(item)
+        if item['label'] == 'label':
+            labels.append(item)
+        else:
+            controls.append(item)
     for control in controls:
-        label = find_left_label(control, labels, delta)
-        if label is None: label = find_top_label(control, labels, delta)
-        if label is None: label = find_right_label(control, labels, delta)
+        label = find_left_label(control, labels, delta_left_x, delta_left_y)
+        if label is None:
+            label = find_top_label(control, labels, delta_top_x, delta_top_y)
+        if label is None:
+            label = find_right_label(control, labels, delta_right_x, delta_right_y)
         if label is not None:
             control['caption'] = label['caption']
 
 
 
-def find_left_label(control, labels, delta):
+def find_left_label(control, labels, delta_x, delta_y):
 	for label in labels:
-		if (control['bottomright']['y'] + delta > label['bottomright']['y']) and (label['bottomright']['y'] > control['bottomright']['y'] - delta):
-			if (control['topleft']['x'] + delta > label['bottomright']['x']) and (label['bottomright']['x'] > control['topleft']['x'] - delta):
+		if (control['bottomright']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['bottomright']['y'] - delta_y):
+			if (control['topleft']['x'] + delta_x > label['bottomright']['x']) and (label['bottomright']['x'] > control['topleft']['x'] - delta_x):
 				return label
 		else:
 			continue
 	return None
 
 
-def find_top_label(control, labels, delta):
+def find_top_label(control, labels, delta_x, delta_y):
     for label in labels:
-		if (control['topleft']['x'] + delta > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta):
-			if (control['topleft']['y'] + delta > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta):
+		if (control['topleft']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta_x):
+			if (control['topleft']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta_y):
 				return label
 		else:
 			continue
     return None
 
 
-def find_right_label(control, labels, delta):
+def find_right_label(control, labels, delta_x, delta_y):
 	for label in labels:
-		if (control['topleft']['y'] + delta > label['topleft']['y']) and (label['topleft']['y'] > control['topleft']['y'] - delta):
-			if (control['bottomright']['x'] + delta > label['topleft']['x']) and (label['topleft']['x'] > control['bottomright']['x'] - delta):
+		if (control['topleft']['y'] + delta_y > label['topleft']['y']) and (label['topleft']['y'] > control['topleft']['y'] - delta_y):
+			if (control['bottomright']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['bottomright']['x'] - delta_x):
 				return label
 		else:
 			continue
