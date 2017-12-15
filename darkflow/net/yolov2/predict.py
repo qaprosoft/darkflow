@@ -145,7 +145,7 @@ def findboxes(self, net_out):
 
 
 def find_labels_for_controls(JSONResult):
-    delta_left_x = 50
+    delta_left_x = 100
     delta_left_y = 5
     delta_top_x = 5
     delta_top_y = 5
