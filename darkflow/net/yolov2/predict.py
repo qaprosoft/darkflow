@@ -145,9 +145,9 @@ def findboxes(self, net_out):
 
 
 def find_labels_for_controls(JSONResult):
-	delta_left_x = 50
-	delta_left_y = 7
-	for item in JSONResult:
+    delta_left_x = 50.0
+    delta_left_y = 7.0
+    for item in JSONResult:
         if item['label'] == 'text_field':
             if delta_left_y > item['topleft']['y'] - item['bottomright']['y']:
                 delta_left_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
