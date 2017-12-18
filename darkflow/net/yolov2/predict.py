@@ -25,18 +25,18 @@ def recognize_label(dictt, distance_dict, ocr, image):
 
 	#print ("1")
 	#print (distance_dict)
-	if label_coordinate in distance_dict:
+	#if label_coordinate in distance_dict:
 	    #print ("3")
-	    caption_coordinate = distance_dict[label_coordinate]
-	    recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-	    dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
-	else:
+	 #   caption_coordinate = distance_dict[label_coordinate]
+	  #  recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
+	   # dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
+	#else:
 
-		caption_coordinate = label_coordinate
+	caption_coordinate = label_coordinate
 
-		recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-		#print ("15")
-		dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
+	recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
+	#print ("15")
+	dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
 	#if dictt["label"] != "label":
 	return dictt
 
@@ -252,8 +252,8 @@ def postprocess(self, net_out, im, save = True):
 		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON)
 
-	#if resultsForJSON:
-	#	find_labels_for_controls(resultsForJSON)
+	if resultsForJSON:
+		find_labels_for_controls(resultsForJSON)
 
 	if self.FLAGS.json:
 		textJSON = json.dumps(resultsForJSON)
