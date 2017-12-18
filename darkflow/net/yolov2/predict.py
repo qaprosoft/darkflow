@@ -252,8 +252,8 @@ def postprocess(self, net_out, im, save = True):
 		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON)
 
-	if resultsForJSON:
-		find_labels_for_controls(resultsForJSON)
+	#if resultsForJSON:
+	#	find_labels_for_controls(resultsForJSON)
 
 	if self.FLAGS.json:
 		textJSON = json.dumps(resultsForJSON)
