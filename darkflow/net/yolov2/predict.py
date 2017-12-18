@@ -147,12 +147,6 @@ def findboxes(self, net_out):
 def find_labels_for_controls(JSONResult):
     delta_left_x = 50.0
     delta_left_y = 7.0
-    for item in JSONResult:
-        if item['label'] == 'text_field':
-            if delta_left_y > item['topleft']['y'] - item['bottomright']['y']:
-                delta_left_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
-            if delta_left_x < item['bottomright']['x'] - item['topleft']['x']:
-                delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
     delta_top_x = 5
     delta_top_y = 5
     delta_right_x = 50
@@ -164,6 +158,16 @@ def find_labels_for_controls(JSONResult):
             labels.append(item)
         elif item['label'] != 'button':
             controls.append(item)
+
+	for item in controls:
+		if item['label'] == 'text_field':
+			if delta_left_y > item['topleft']['y'] - item['bottomright']['y']:
+				delta_left_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
+				delta_right_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
+			if delta_left_x > item['bottomright']['x'] - item['topleft']['x']:
+				delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
+				delta_right_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
+
     for control in controls:
         label = find_left_label(control, labels, delta_left_x, delta_left_y)
         if label is None:
