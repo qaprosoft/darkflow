@@ -161,14 +161,12 @@ def find_labels_for_controls(JSONResult):
 
 	for item in controls:
 		if item['label'] == 'text_field':
-			if delta_left_y > item['topleft']['y'] - item['bottomright']['y']:
-				delta_left_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
-				delta_right_y = (item['topleft']['y'] - item['bottomright']['y']) * 0.5
-				item['delta_y'] = delta_left_y
+			if delta_left_y > item['bottomright']['y'] - item['topleft']['y']:
+				delta_left_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
+				delta_right_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
 			if delta_left_x > item['bottomright']['x'] - item['topleft']['x']:
 				delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
 				delta_right_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
-				item['delta_x'] = delta_left_y
 
     for control in controls:
         label = find_left_label(control, labels, delta_left_x, delta_left_y)
