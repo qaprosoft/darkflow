@@ -1,9 +1,15 @@
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
-from Cython.Build import cythonize
 import numpy
 import os
 import imp
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    def cythonize(*args, **kwargs):
+        from Cython.Build import cythonize
+        return cythonize(*args, **kwargs)
 
 VERSION = imp.load_source('version', os.path.join('.', 'darkflow', 'version.py'))
 VERSION = VERSION.__version__
@@ -69,6 +75,6 @@ setup(
     license='GPLv3',
     url='https://github.com/thtrieu/darkflow',
     packages = find_packages(),
-	scripts = ['flow'],
+	scripts = ['flow3'],
     ext_modules = cythonize(ext_modules)
 )

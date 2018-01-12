@@ -159,14 +159,14 @@ def find_labels_for_controls(JSONResult):
         elif item['label'] != 'button':
             controls.append(item)
 
-	for item in controls:
-		if item['label'] == 'text_field':
-			if delta_left_y > item['bottomright']['y'] - item['topleft']['y']:
-				delta_left_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
-				delta_right_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
-			if delta_left_x > item['bottomright']['x'] - item['topleft']['x']:
-				delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
-				delta_right_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
+    for item in controls:
+        if item['label'] == 'text_field':
+            if delta_left_y > item['bottomright']['y'] - item['topleft']['y']:
+                delta_left_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
+                delta_right_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
+            if delta_left_x > item['bottomright']['x'] - item['topleft']['x']:
+                delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
+                delta_right_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
 
     for control in controls:
         label = find_left_label(control, labels, delta_left_x, delta_left_y)
@@ -191,11 +191,11 @@ def find_left_label(control, labels, delta_x, delta_y):
 
 def find_top_label(control, labels, delta_x, delta_y):
     for label in labels:
-		if (control['topleft']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta_x):
-			if (control['topleft']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta_y):
-				return label
-		else:
-			continue
+        if (control['topleft']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta_x):
+            if (control['topleft']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta_y):
+                return label
+            else:
+                continue
     return None
 
 

@@ -5,9 +5,10 @@ import tensorflow as tf
 import pickle
 from multiprocessing.pool import ThreadPool
 import sys
+from importlib import reload
 
 reload(sys)
-sys.setdefaultencoding('utf8')
+#sys.setdefaultencoding('utf8')
 
 train_stats = (
     'Training statistics: \n'

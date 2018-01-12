@@ -1,7 +1,7 @@
 """
 tfnet secondary (helper) methods
 """
-from ..utils.loader import create_loader
+from darkflow.utils.loader import create_loader
 from time import time as timer
 import tensorflow as tf
 import numpy as np
@@ -41,7 +41,7 @@ def say(self, *msgs):
         if msg is None: continue
         print(msg)
 
-def load_old_graph(self, ckpt): 
+def load_old_graph(self, ckpt):	
     ckpt_loader = create_loader(ckpt)
     self.say(old_graph_msg.format(ckpt))
     
@@ -65,23 +65,25 @@ def _get_fps(self, frame):
     processed = self.framework.postprocess(net_out, frame, False)
     return timer() - start
 
-def camera(self):
-    file = self.FLAGS.demo
-    SaveVideo = self.FLAGS.saveVideo
-    
+def camera(self, file, SaveVideo):
     if file == 'camera':
         file = 0
     else:
         assert os.path.isfile(file), \
         'file {} does not exist'.format(file)
         
+    self.say('Openinng VideoCapture')
+    
     camera = cv2.VideoCapture(file)
     
     if file == 0:
         self.say('Press [ESC] to quit demo')
-        
+    
     assert camera.isOpened(), \
     'Cannot capture source'
+
+    elapsed = int()
+    start = timer()
     
     if file == 0:#camera window
         cv2.namedWindow('', 0)
@@ -92,6 +94,8 @@ def camera(self):
         _, frame = camera.read()
         height, width, _ = frame.shape
 
+    self.say('height %s, width %s' %(height, width))
+
     if SaveVideo:
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         if file == 0:#camera window
@@ -100,42 +104,22 @@ def camera(self):
             fps = 1
         else:
             fps = round(camera.get(cv2.CAP_PROP_FPS))
-        videoWriter = cv2.VideoWriter(
-            'video.avi', fourcc, fps, (width, height))
+        videoWriter = cv2.VideoWriter('video.avi', fourcc, fps, (width, height))
 
-    # buffers for demo in batch
-    buffer_inp = list()
-    buffer_pre = list()
-    
-    elapsed = int()
-    start = timer()
-    self.say('Press [ESC] to quit demo')
-    # Loop through frames
     while camera.isOpened():
-        elapsed += 1
         _, frame = camera.read()
         if frame is None:
             print ('\nEnd of Video')
             break
         preprocessed = self.framework.preprocess(frame)
-        buffer_inp.append(frame)
-        buffer_pre.append(preprocessed)
-        
-        # Only process and imshow when queue is full
-        if elapsed % self.FLAGS.queue == 0:
-            feed_dict = {self.inp: buffer_pre}
-            net_out = self.sess.run(self.out, feed_dict)
-            for img, single_out in zip(buffer_inp, net_out):
-                postprocessed = self.framework.postprocess(
-                    single_out, img, False)
-                if SaveVideo:
-                    videoWriter.write(postprocessed)
-                if file == 0: #camera window
-                    cv2.imshow('', postprocessed)
-            # Clear Buffers
-            buffer_inp = list()
-            buffer_pre = list()
-
+        feed_dict = {self.inp: [preprocessed]}
+        net_out = self.sess.run(self.out,feed_dict)[0]
+        processed = self.framework.postprocess(net_out, frame, False)
+        if SaveVideo:
+            videoWriter.write(processed)
+        if file == 0:#camera window
+            cv2.imshow('', processed)
+        elapsed += 1
         if elapsed % 5 == 0:
             sys.stdout.write('\r')
             sys.stdout.write('{0:3.3f} FPS'.format(
