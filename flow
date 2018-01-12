@@ -29,7 +29,6 @@ flags.DEFINE_integer("epoch", 1000, "number of epoch")
 flags.DEFINE_integer("save", 2000, "save checkpoint every ? training examples")
 flags.DEFINE_string("demo", '', "demo on webcam")
 flags.DEFINE_string('queue', 1, 'process demo in batch')
-flags.DEFINE_boolean("profile", False, "profile")
 flags.DEFINE_boolean("json", False, "Outputs bounding box information in json format.")
 flags.DEFINE_boolean("saveVideo", False, "Records video from input video or camera")
 flags.DEFINE_string('pbLoad', '', 'path to .pb protobuf file (metaLoad must also be specified)')
@@ -41,7 +40,7 @@ def get_dir(dirs):
 	for d in dirs:
 		this = os.path.abspath(os.path.join(os.path.curdir, d))
 		if not os.path.exists(this): os.makedirs(this)
-get_dir([FLAGS.test, FLAGS.binary, FLAGS.backup, os.path.join(FLAGS.test,'out'), FLAGS.summary])
+get_dir([FLAGS.imgdir, FLAGS.binary, FLAGS.backup, os.path.join(FLAGS.imgdir,'out'), FLAGS.summary])
 
 # fix FLAGS.load to appropriate type
 try: FLAGS.load = int(FLAGS.load)
@@ -49,9 +48,9 @@ except: pass
 
 tfnet = TFNet(FLAGS)
 
-if FLAGS.profile:
-	tfnet.framework.profile(tfnet)
-	exit()
+#if FLAGS.profile:
+#	tfnet.framework.profile(tfnet)
+#	exit()
 
 if FLAGS.demo:
 	tfnet.camera(FLAGS.demo, FLAGS.saveVideo)
