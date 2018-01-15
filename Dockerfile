@@ -1,5 +1,8 @@
 FROM tensorflow/tensorflow:latest-gpu-py3
 
+ENV DARKFLOW_HOME=/qps-ai/darkflow
+ENV IA_DATA=/qps-ai/data
+
 MAINTAINER Vadim Delendik (vdelendik@qaprosoft.com)
 
 RUN apt-get update && apt-get install -y \
