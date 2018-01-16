@@ -122,7 +122,7 @@ RUN \
 
 RUN \
     cd /qps-ai/darkflow && \
-    ./deploy.sh
+    ./scripts/deploy.sh
 
 CMD nvidia-smi -q
 RUN python3 -c "import Cython; print(Cython.__version__)"
