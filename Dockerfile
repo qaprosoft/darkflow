@@ -114,8 +114,6 @@ RUN \
 
 COPY . /qps-ai/darkflow/
 
-RUN ln -s -f /usr/bin/python /usr/bin/python3.5
-
 RUN \
     cd darkflow && \
     ls -l && \
