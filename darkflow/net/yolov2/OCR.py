@@ -15,12 +15,6 @@ from skimage.filters import threshold_sauvola
 
 class OCR:
 
-    def __init__(self):
-        """
-            OCR constructor.
-        """
-        pass
-
     def _get_image_by_basename(self, basename, image_folder):
         for file in os.listdir(image_folder):
             #print ("1-6")
@@ -30,6 +24,54 @@ class OCR:
             else:
                 continue
         raise ValueError
+
+    @staticmethod
+    def prepare_image_for_recognition(im):
+        """
+            Prepares an image for recognition.
+            NOTE: works for the whole image
+            :param im: path to image
+            :return: prepared image as nparray
+        """
+        # TODO: make method work with the white-colored fonts
+        image = cv2.imread(im)
+        pil_img = Image.fromarray(image)
+        # resize image, x2
+        resized = pil_img.resize((image.shape[1] * 2, image.shape[0] * 2), resample=Image.LANCZOS)
+        image = np.array(resized)
+        # make image b/w
+        image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+        # a little blur and filters
+        image = cv2.adaptiveThreshold(cv2.medianBlur(image, 1), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                      cv2.THRESH_BINARY, 13, 3)
+
+        return Image.fromarray(image.astype(np.uint8))
+
+    @staticmethod
+    def get_boxes_from_prepared_image(im):
+        """
+            Provides coordinates and recognition confidence from text labels of the recognized image in original size
+            :param im: string object which contains info about recognized text, its coordinates,
+            confidence of recognition, etc.
+            :return: a list of boxes, like ["top (int), left (int), right (int), bottom (int), confidence (str), text (str)",]
+        """
+        pts_data = pts.image_to_data(image=im)
+        entries = pts_data.split("\n")
+        raw_boxes = [entry.split("\t")[6:] for entry in entries
+                     if entry.split("\t")[-1] not in ('', ' ') and len(entry.split("\t")[6:]) == 6][1:]
+
+        for raw_box in raw_boxes:
+            left, top, w, h = [int(coord) for coord in raw_box[:4]]
+            left //= 2
+            top //= 2
+            w //= 2
+            h //= 2
+
+            right = left + w
+            bottom = top + h
+            raw_box[:4] = left, top, right, bottom
+
+        return raw_boxes
 
     def recognize_caption_v2(self, coordinates, basename=None, image_folder=None, image=None):
         """
@@ -76,3 +118,4 @@ class OCR:
         #print ("1-4")
         #cv2.imwrite(filename=save_folder+i, img=image)
         return pts.image_to_string(image=pil_img)
+
