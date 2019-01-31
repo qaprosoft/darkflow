@@ -9,6 +9,8 @@ from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
 import multiprocessing
+from pprint import pprint
+
 
 def recognize_label(dictt, distance_dict, ocr, image):
 
@@ -35,7 +37,8 @@ def recognize_label(dictt, distance_dict, ocr, image):
 	caption_coordinate = label_coordinate
 
 	recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-	#print ("15")
+	# print ("15")
+	#recognized = str(OCR.OCR.recognize_image(caption_coordinate, image=image))
 	dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
 	#if dictt["label"] != "label":
 	return dictt
@@ -209,6 +212,35 @@ def find_right_label(control, labels, delta_x, delta_y):
 	return None
 
 
+def get_overlap_rectangle_area(boxA, boxB):
+	xA = max(boxA[0], boxB[0])
+	yA = max(boxA[1], boxB[1])
+	xB = min(boxA[2], boxB[2])
+	yB = min(boxA[3], boxB[3])
+	return max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+
+def append_text_to_result_json(caption, resultsForJSON):
+	areas = []
+	for result in resultsForJSON:
+		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
+		rect = left, top, right, bot
+		areas.append(get_overlap_rectangle_area(caption[:4], rect))
+	ind_of_max_area = 0
+
+	for i in range(len(areas)):
+		if areas[i] == max(areas):
+			ind_of_max_area = i
+			break
+	resultsForJSON[ind_of_max_area]["caption"] = caption[-1]
+
+	if all(area == 0 for area in areas):
+		resultsForJSON.append({"label": "label", "caption": caption[-1], "confidence": float('%.2f' % float(caption[4])), "topleft": {"x": caption[0], "y": caption[1]}, "bottomright": {"x": caption[2], "y": caption[3]}})
+
+	return resultsForJSON
+
+
+
 def postprocess(self, net_out, im, save = True):
 	"""
 	Takes net output, draw net_out, save to disk
@@ -220,6 +252,10 @@ def postprocess(self, net_out, im, save = True):
 	threshold = meta['thresh']
 	colors = meta['colors']
 	labels = meta['labels']
+
+	prepared = OCR.OCR.prepare_image_for_recognition(im=im)
+	captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+
 	if type(im) is not np.ndarray:
 		imgcv = cv2.imread(im)
 	else: imgcv = im
@@ -249,18 +285,21 @@ def postprocess(self, net_out, im, save = True):
 
 
 	# Adding caption tag
-	ocr = OCR.OCR()
-	distance_dict = get_distance_dict(resultsForJSON)
-	resultsForJSON_v2 = []
-	if resultsForJSON:
+	# ocr = OCR.OCR()
+	# distance_dict = get_distance_dict(resultsForJSON)
+	# resultsForJSON_v2 = []
+	# if resultsForJSON:
 		#print ("12")
-		for dictt in resultsForJSON:
+		#for dictt in resultsForJSON:
             # print ("13")
             # print (dictt)
-			resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
+			#resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
 
 		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON)
+
+	for caption in captions:
+		append_text_to_result_json(caption, resultsForJSON)
 
 	if resultsForJSON:
 		find_labels_for_controls(resultsForJSON)
