@@ -118,9 +118,9 @@ RUN \
     python3 setup.py build_ext --inplace
     #pip3 install .
 
-#RUN \
-#    cd /qps-ai/darkflow && \
-#    ./scripts/deploy.sh
+RUN \
+    cd /qps-ai/darkflow && \
+    ./scripts/deploy.sh
 
 CMD nvidia-smi -q
 RUN python3 -c "import Cython; print(Cython.__version__)"
