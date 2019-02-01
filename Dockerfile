@@ -55,12 +55,10 @@ libgtk2.0-dev \
   wget \
   sudo
 
-
 RUN cd /opt && \
-  wget https://github.com/daveselinger/opencv/archive/3.1.0-with-cuda8.zip -O opencv-3.1.0.zip -nv && \
-  unzip opencv-3.1.0.zip && \
-  mv opencv-3.1.0-with-cuda8 opencv-3.1.0 && \
-  cd opencv-3.1.0 && \
+  wget https://github.com/opencv/opencv/archive/4.0.1.zip -O opencv-4.0.1.zip -nv && \
+  unzip opencv-4.0.1.zip && \
+  cd opencv-4.0.1 && \
   rm -rf build && \
   mkdir build && \
   cd build && \
@@ -80,7 +78,7 @@ RUN cd /opt && \
   make install && \
   echo "/usr/local/lib" | sudo tee -a /etc/ld.so.conf.d/opencv.conf && \
   ldconfig
-RUN cp /opt/opencv-3.1.0/build/lib/cv2.so /usr/lib/python2.7/dist-packages/cv2.so
+RUN cp /opt/opencv-4.0.1/build/lib/cv2.so /usr/lib/python2.7/dist-packages/cv2.so
 
 WORKDIR /qps-ai/
 
@@ -97,12 +95,12 @@ RUN \
 
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
-ARG AWS_BUCKET_URL
+ARG AWS_BUCKET_URL=s3://ai.qaprosoft.com/
 ARG AWS_REGION=us-east-1
 ARG AWS_OUTPUT=json
 
 # copy AI models and artifacts
-# TODO: verify if it is possible to use asw without /root/.local/bin
+# TODO: verify if it is possible to use aws without /root/.local/bin
 RUN \
     export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
     && export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
@@ -120,9 +118,9 @@ RUN \
     python3 setup.py build_ext --inplace
     #pip3 install .
 
-RUN \
-    cd /qps-ai/darkflow && \
-    ./scripts/deploy.sh
+#RUN \
+#    cd /qps-ai/darkflow && \
+#    ./scripts/deploy.sh
 
 CMD nvidia-smi -q
 RUN python3 -c "import Cython; print(Cython.__version__)"
