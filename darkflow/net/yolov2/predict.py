@@ -253,9 +253,6 @@ def postprocess(self, net_out, im, save = True):
 	colors = meta['colors']
 	labels = meta['labels']
 
-	prepared = OCR.OCR.prepare_image_for_recognition(im=im)
-	captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-
 	if type(im) is not np.ndarray:
 		imgcv = cv2.imread(im)
 	else: imgcv = im
@@ -298,13 +295,13 @@ def postprocess(self, net_out, im, save = True):
 		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON)
 
-	for caption in captions:
-		append_text_to_result_json(caption, resultsForJSON)
-
-	if resultsForJSON:
-		find_labels_for_controls(resultsForJSON)
-
 	if self.FLAGS.json:
+		prepared = OCR.OCR.prepare_image_for_recognition(im=im)
+		captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+		if resultsForJSON:
+			for caption in captions:
+				append_text_to_result_json(caption, resultsForJSON)
+				find_labels_for_controls(resultsForJSON)
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
 		with open(textFile, 'w') as f:
