@@ -34,15 +34,9 @@ class OCR:
             :param gamma: gamma-coefficient (values from 0.04 to 25)
             :return: prepared image as PIL image
         """
-        print()
-        print('----------------', gamma, '-----------------')
-        print()
         if gamma < 0.04 or gamma > 25.0:  # do nothing with the image if gamma is out of diapason
             gamma = 1.0
 
-        print()
-        print('----------------', gamma, '-----------------')
-        print()
         image = np.array(Image.open(im))
         resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
@@ -61,7 +55,6 @@ class OCR:
             :param im: path to an image
             :return: prepared image as PIL image
         """
-        print("AAAAAAAAa")
         image = np.array(Image.open(im))
         resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
