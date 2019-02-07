@@ -61,6 +61,7 @@ class OCR:
             :param im: path to an image
             :return: prepared image as PIL image
         """
+        print("AAAAAAAAa")
         image = np.array(Image.open(im))
         resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
