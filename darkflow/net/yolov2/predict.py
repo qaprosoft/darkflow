@@ -302,10 +302,11 @@ def postprocess(self, net_out, im, save = True):
 		else:
 			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
 		captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+		pprint(captions)
 		if resultsForJSON:
 			for caption in captions:
 				append_text_to_result_json(caption, resultsForJSON)
-				find_labels_for_controls(resultsForJSON)
+			find_labels_for_controls(resultsForJSON)
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
 		with open(textFile, 'w') as f:
