@@ -10,6 +10,7 @@ from math import sqrt
 from joblib import Parallel, delayed
 import multiprocessing
 from pprint import pprint
+import itertools
 
 
 def recognize_label(dictt, distance_dict, ocr, image):
@@ -296,13 +297,20 @@ def postprocess(self, net_out, im, save = True):
          #   distance_dict, ocr, imgcv) for dictt in resultsForJSON
 
 	prepared = None
+	captions = list()
 	if self.FLAGS.json:
 		if self.FLAGS.gamma == 1.0:
 			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
-		else:
+			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+		if self.FLAGS.gamma != 1.0 and self.FLAGS.run_both_ocr == False:
 			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
-		captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		pprint(captions)
+			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+		elif self.FLAGS.gamma != 1.0 and self.FLAGS.run_both_ocr == True:
+			prepared_from_gammas = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
+			prepared_from_thresholding = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
+			captions.append(OCR.OCR.get_boxes_from_prepared_image(im=prepared_from_gammas))
+			captions.append( OCR.OCR.get_boxes_from_prepared_image(im=prepared_from_thresholding))
+			captions = list(itertools.chain.from_iterable(captions))  # make one list from a list of lists in case of run_both_ocr True
 		if resultsForJSON:
 			for caption in captions:
 				append_text_to_result_json(caption, resultsForJSON)

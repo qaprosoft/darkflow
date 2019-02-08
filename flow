@@ -34,6 +34,7 @@ flags.DEFINE_boolean("saveVideo", False, "Records video from input video or came
 flags.DEFINE_string('pbLoad', '', 'path to .pb protobuf file (metaLoad must also be specified)')
 flags.DEFINE_string('metaLoad', '', 'path to .meta file generated during --savepb that corresponds to .pb file')
 flags.DEFINE_float('gamma', 1.0, 'gamma-correction coefficient [0.04-25.0]')
+flags.DEFINE_boolean('run_both_ocr', False, 'run thresholding and gamma-correction preparation methods')
 
 FLAGS = flags.FLAGS
 
