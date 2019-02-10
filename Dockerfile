@@ -55,7 +55,6 @@ libgtk2.0-dev \
   wget \
   sudo
 
-
 RUN cd /opt && \
   wget https://github.com/opencv/opencv/archive/4.0.1.zip -O opencv-4.0.1.zip -nv && \
   unzip opencv-4.0.1.zip && \
@@ -96,12 +95,12 @@ RUN \
 
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
-ARG AWS_BUCKET_URL
+ARG AWS_BUCKET_URL=s3://ai.qaprosoft.com/
 ARG AWS_REGION=us-east-1
 ARG AWS_OUTPUT=json
 
 # copy AI models and artifacts
-# TODO: verify if it is possible to use asw without /root/.local/bin
+# TODO: verify if it is possible to use aws without /root/.local/bin
 RUN \
     export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
     && export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
