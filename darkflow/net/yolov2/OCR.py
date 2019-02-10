@@ -27,39 +27,41 @@ class OCR:
 
     @staticmethod
     def prepare_image_for_recognition_using_gammas(im, gamma):
-    """
-       Prepares an whole image for recognition using gamma-correction method. 
-       Increases a contrast of a source image
-       :param im: path to an image
-       :param gamma: gamma-coefficient (values from 0.04 to 25)
-       :return: prepared image as PIL image
-    """
-    if gamma < 0.04 or gamma > 25.0:  # do nothing with the image if gamma is out of diapason
-        gamma = 1.0
-    image = np.array(Image.open(im))
-    resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
-    image = np.array(resized)
+        """
+            Prepares an whole image for recognition using gamma-correction method. 
+            Increases a contrast of a source image
+            :param im: path to an image
+            :param gamma: gamma-coefficient (values from 0.04 to 25)
+            :return: prepared image as PIL image
+        """
+        if gamma < 0.04 or gamma > 25.0:  # do nothing with the image if gamma is out of diapason
+            gamma = 1.0
 
-    lookUpTable = np.empty((1, 256), np.uint8)
-    for i in range(256):
-        lookUpTable[0, i] = np.clip(pow(i / 255.0, gamma) * 255.0, 0, 255)
-    res = cv2.LUT(image, lookUpTable)
-    return Image.fromarray(res.astype(np.uint8))
+        image = np.array(Image.open(im))
+        resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
+        image = np.array(resized)
 
+        lookUpTable = np.empty((1, 256), np.uint8)
+        for i in range(256):
+            lookUpTable[0, i] = np.clip(pow(i / 255.0, gamma) * 255.0, 0, 255)
+        res = cv2.LUT(image, lookUpTable)
+        return Image.fromarray(res.astype(np.uint8))
+
+    @staticmethod
     def prepare_image_for_recognition_using_thresholding(im):
-    """
-        Prepares an whole image for recognition using thresholds.
-        Converts source to grayscale image and filters
-        :param im: path to an image
-        :return: prepared image as PIL image
-    """
-    image = np.array(Image.open(im))
-    resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
-    image = np.array(resized)
-    image = threshold_sauvola(image, window_size=3, k=0.05)
-    image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
-    image = cv2.threshold(image, 0, 255, cv2.THRESH_TOZERO | cv2.THRESH_OTSU)[1]
-    return Image.fromarray(image.astype(np.uint8))
+        """
+            Prepares an whole image for recognition using thresholds.
+            Converts source to grayscale image and filters
+            :param im: path to an image
+            :return: prepared image as PIL image
+        """
+        image = np.array(Image.open(im))
+        resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
+        image = np.array(resized)
+        image = threshold_sauvola(image, window_size=3, k=0.05)
+        image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+        image = cv2.threshold(image, 0, 255, cv2.THRESH_TOZERO | cv2.THRESH_OTSU)[1]
+        return Image.fromarray(image.astype(np.uint8))
 
     @staticmethod
     def get_boxes_from_prepared_image(im):
