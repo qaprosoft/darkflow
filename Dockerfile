@@ -57,10 +57,9 @@ libgtk2.0-dev \
 
 
 RUN cd /opt && \
-  wget https://github.com/daveselinger/opencv/archive/3.1.0-with-cuda8.zip -O opencv-3.1.0.zip -nv && \
-  unzip opencv-3.1.0.zip && \
-  mv opencv-3.1.0-with-cuda8 opencv-3.1.0 && \
-  cd opencv-3.1.0 && \
+  wget https://github.com/opencv/opencv/archive/4.0.1.zip -O opencv-4.0.1.zip -nv && \
+  unzip opencv-4.0.1.zip && \
+  cd opencv-4.0.1 && \
   rm -rf build && \
   mkdir build && \
   cd build && \
@@ -80,7 +79,7 @@ RUN cd /opt && \
   make install && \
   echo "/usr/local/lib" | sudo tee -a /etc/ld.so.conf.d/opencv.conf && \
   ldconfig
-RUN cp /opt/opencv-3.1.0/build/lib/cv2.so /usr/lib/python2.7/dist-packages/cv2.so
+RUN cp /opt/opencv-4.0.1/build/lib/cv2.so /usr/lib/python2.7/dist-packages/cv2.so
 
 WORKDIR /qps-ai/
 
