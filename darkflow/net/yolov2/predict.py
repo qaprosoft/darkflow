@@ -179,7 +179,7 @@ def find_labels_for_controls(JSONResult):
         if label is None:
             label = find_right_label(control, labels, delta_right_x, delta_right_y)
         if label is not None:
-            control['caption'] = label['caption']
+            control['caption'] = label.get('caption')
 
 
 
@@ -299,18 +299,14 @@ def postprocess(self, net_out, im, save = True):
 	prepared = None
 	captions = list()
 	if self.FLAGS.json:
-		if self.FLAGS.gamma == 1.0:
+		if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
 			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
 			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		if self.FLAGS.gamma != 1.0 and self.FLAGS.run_both_ocr == False:
+		elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
 			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
 			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		elif self.FLAGS.gamma != 1.0 and self.FLAGS.run_both_ocr == True:
-			prepared_from_gammas = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
-			prepared_from_thresholding = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
-			captions.append(OCR.OCR.get_boxes_from_prepared_image(im=prepared_from_gammas))
-			captions.append( OCR.OCR.get_boxes_from_prepared_image(im=prepared_from_thresholding))
-			captions = list(itertools.chain.from_iterable(captions))  # make one list from a list of lists in case of run_both_ocr True
+		else:
+			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
 		if resultsForJSON:
 			for caption in captions:
 				append_text_to_result_json(caption, resultsForJSON)
