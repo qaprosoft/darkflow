@@ -221,25 +221,35 @@ def get_overlap_rectangle_area(boxA, boxB):
 	return max(0, xB - xA + 1) * max(0, yB - yA + 1)
 
 
-def append_text_to_result_json(caption, resultsForJSON):
+def get_area_of_word(box):
+	return abs(box[2] - box[0]) * abs(box[3] - box[1])
+
+
+def append_text_to_result_json(result, words):
 	areas = []
-	for result in resultsForJSON:
+	# for result in resultsForJSON:
+	#	left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
+#		rect = left, top, right, bot
+#		areas.append(get_overlap_rectangle_area(caption[:4], rect))
+#	pprint(areas)
+#	for i in range(len(areas)):
+#		resultsForJSON[i]["caption"] = ""
+#		if areas[i] > 0:
+#			resultsForJSON[i]["caption"] += "{} ".format(caption[-1])
+#			pprint(resultsForJSON[i]["caption"])
+	# resultsForJSON[ind_of_max_area]["caption"] = caption[-1]
+
+#	if all(area == 0 for area in areas):
+#		resultsForJSON.append({"label": "label", "caption": caption[-1], "confidence": float('%.2f' % float(caption[4])), "topleft": {"x": caption[0], "y": caption[1]}, "bottomright": {"x": caption[2], "y": caption[3]}})
+
+	result["caption"] = ""
+	for word in words:
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
-		areas.append(get_overlap_rectangle_area(caption[:4], rect))
-	ind_of_max_area = 0
-
-	for i in range(len(areas)):
-		if areas[i] == max(areas):
-			ind_of_max_area = i
-			break
-	resultsForJSON[ind_of_max_area]["caption"] = caption[-1]
-
-	if all(area == 0 for area in areas):
-		resultsForJSON.append({"label": "label", "caption": caption[-1], "confidence": float('%.2f' % float(caption[4])), "topleft": {"x": caption[0], "y": caption[1]}, "bottomright": {"x": caption[2], "y": caption[3]}})
-
-	return resultsForJSON
-
+		if get_overlap_rectangle_area(word[:4], rect) >= get_area_of_word(word[:4]):
+			result["caption"] = result["caption"] + " " + word[-1]
+	pprint(result["caption"])
+	return result
 
 
 def postprocess(self, net_out, im, save = True):
@@ -308,8 +318,10 @@ def postprocess(self, net_out, im, save = True):
 		else:
 			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
 		if resultsForJSON:
-			for caption in captions:
-				append_text_to_result_json(caption, resultsForJSON)
+			#for caption in captions:
+		#		append_text_to_result_json(caption, resultsForJSON)
+			for result in resultsForJSON:
+				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
