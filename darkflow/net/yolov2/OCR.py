@@ -23,8 +23,7 @@ class OCR:
             confidence of recognition, etc.
             :return: a list of boxes, like ["top (int), left (int), right (int), bottom (int), confidence (str), text (str)",]
         """
-        image = Image.fromarray(np.array(Image.open(im)))
-        pts_data = pts.image_to_data(image=image)
+        pts_data = pts.image_to_data(image=im)
         entries = pts_data.split("\n")
         raw_boxes = [entry.split("\t")[6:] for entry in entries
                      if entry.split("\t")[-1] not in ('', ' ') and len(entry.split("\t")[6:]) == 6][1:]
@@ -49,8 +48,7 @@ class OCR:
         if gamma < 0.04 or gamma > 25.0:  # do nothing with the image if gamma is out of diapason
             gamma = 1.0
 
-        image = np.array(Image.open(im))
-        resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
+        resized = cv2.resize(im, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
 
         lookUpTable = np.empty((1, 256), np.uint8)
@@ -67,8 +65,7 @@ class OCR:
             :param im: path to an image
             :return: prepared image as PIL image
         """
-        image = np.array(Image.open(im))
-        resized = cv2.resize(image, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
+        resized = cv2.resize(im, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         image = threshold_sauvola(image, window_size=3, k=0.05)
         image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
