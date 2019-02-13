@@ -220,7 +220,7 @@ def crop_image_into_boxes(im, outdir, result_list):
 	"""
 	x_begin, x_end = result_list[0]['topleft']['x'], result_list[0]['bottomright']['x']
 	y_begin, y_end = result_list[0]['topleft']['y'], result_list[0]['bottomright']['y']
-	cropped = im[x_begin:x_end, y_begin:y_end]
+	cropped = im[y_begin:y_end, x_begin:x_end]
 	if len(result_list) == 1:
 		cv2.imwrite("{}/{}.png".format(outdir, ''.join(random.sample((string.ascii_lowercase + string.digits), 10))), cropped)
 		return
