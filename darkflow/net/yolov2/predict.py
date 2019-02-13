@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import string
 import math
 import cv2
 import os
@@ -10,39 +12,6 @@ from math import sqrt
 from joblib import Parallel, delayed
 import multiprocessing
 from pprint import pprint
-import itertools
-
-
-def recognize_label(dictt, distance_dict, ocr, image):
-
-	x1_label = dictt["topleft"]["x"]
-	#print (x1_label)
-	y1_label = dictt["topleft"]["y"]
-	#print (y1_label)
-	x2_label = dictt["bottomright"]["x"]
-	#print (x2_label)
-	y2_label = dictt["bottomright"]["y"]
-	#print (y2_label)
-	#print ("14")
-	label_coordinate = (x1_label, y1_label, x2_label, y2_label)
-
-	#print ("1")
-	#print (distance_dict)
-	#if label_coordinate in distance_dict:
-	    #print ("3")
-	 #   caption_coordinate = distance_dict[label_coordinate]
-	  #  recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-	   # dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
-	#else:
-
-	caption_coordinate = label_coordinate
-
-	recognized = str(ocr.recognize_caption_v2(caption_coordinate, image=image))
-	# print ("15")
-	#recognized = str(OCR.OCR.recognize_image(caption_coordinate, image=image))
-	dictt["caption"] = recognized#{"caption":recognized, "coord":caption_coordinate}
-	#if dictt["label"] != "label":
-	return dictt
 
 
 def _get_center_coordinate(coordinates):
@@ -213,7 +182,7 @@ def find_right_label(control, labels, delta_x, delta_y):
 	return None
 
 
-def get_overlap_rectangle_area(boxA, boxB):
+def _get_overlap_rectangle_area(boxA, boxB):
 	xA = max(boxA[0], boxB[0])
 	yA = max(boxA[1], boxB[1])
 	xB = min(boxA[2], boxB[2])
@@ -221,35 +190,42 @@ def get_overlap_rectangle_area(boxA, boxB):
 	return max(0, xB - xA + 1) * max(0, yB - yA + 1)
 
 
-def get_area_of_word(box):
+def _get_area_of_word(box):
 	return abs(box[2] - box[0]) * abs(box[3] - box[1])
 
 
 def append_text_to_result_json(result, words):
+	"""
+		Appends the captions from OCR into the labels from nnet
+		:param result: a single dict record from the nnet result
+		:param words: list of captions from OCR
+		:return result: modified value with caption text
+	"""
 	areas = []
-	# for result in resultsForJSON:
-	#	left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
-#		rect = left, top, right, bot
-#		areas.append(get_overlap_rectangle_area(caption[:4], rect))
-#	pprint(areas)
-#	for i in range(len(areas)):
-#		resultsForJSON[i]["caption"] = ""
-#		if areas[i] > 0:
-#			resultsForJSON[i]["caption"] += "{} ".format(caption[-1])
-#			pprint(resultsForJSON[i]["caption"])
-	# resultsForJSON[ind_of_max_area]["caption"] = caption[-1]
-
-#	if all(area == 0 for area in areas):
-#		resultsForJSON.append({"label": "label", "caption": caption[-1], "confidence": float('%.2f' % float(caption[4])), "topleft": {"x": caption[0], "y": caption[1]}, "bottomright": {"x": caption[2], "y": caption[3]}})
-
 	result["caption"] = ""
 	for word in words:
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
-		if get_overlap_rectangle_area(word[:4], rect) >= get_area_of_word(word[:4]):
+		if _get_overlap_rectangle_area(word[:4], rect) >= _get_area_of_word(word[:4]):
 			result["caption"] = result["caption"] + " " + word[-1]
-	pprint(result["caption"])
 	return result
+
+
+def crop_image_into_boxes(im, outdir, result_list):
+	"""
+		Crops an original image into a list of images with found captions
+		:param im: original image as np array
+		:param outdir: path where the crops is written
+		:param result_list: result dict with captions
+	"""
+	x_begin, x_end = result_list[0]['topleft']['x'], result_list[0]['bottomright']['x']
+	y_begin, y_end = result_list[0]['topleft']['y'], result_list[0]['bottomright']['y']
+	cropped = im[x_begin:x_end, y_begin:y_end]
+	if len(result_list) == 1:
+		cv2.imwrite("{}/{}.png".format(outdir, ''.join(random.sample((string.ascii_lowercase + string.digits), 10))), cropped)
+		return
+	cv2.imwrite("{}/{}.png".format(outdir, ''.join(random.sample((string.ascii_lowercase + string.digits), 10))), cropped)
+	return crop_image_into_boxes(im, outdir, result_list[1:])
 
 
 def postprocess(self, net_out, im, save = True):
@@ -291,42 +267,32 @@ def postprocess(self, net_out, im, save = True):
 	outfolder = os.path.join(self.FLAGS.imgdir, 'out')
 	img_name = os.path.join(outfolder, os.path.basename(im))
 
-
-	# Adding caption tag
-	# ocr = OCR.OCR()
-	# distance_dict = get_distance_dict(resultsForJSON)
-	# resultsForJSON_v2 = []
-	# if resultsForJSON:
-		#print ("12")
-		#for dictt in resultsForJSON:
-            # print ("13")
-            # print (dictt)
-			#resultsForJSON_v2.append(recognize_label(dictt, distance_dict, ocr, imgcv))
-
-		#resultsForJSON_v2 = Parallel(n_jobs=-1, backend="threading")(delayed(recognize_label)(dictt,
-         #   distance_dict, ocr, imgcv) for dictt in resultsForJSON
-
 	prepared = None
 	captions = list()
 	if self.FLAGS.json:
 		if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
+			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=imgcv)
 			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 		elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
+			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=imgcv, gamma=self.FLAGS.gamma)
 			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 		else:
 			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
 		if resultsForJSON:
-			#for caption in captions:
-		#		append_text_to_result_json(caption, resultsForJSON)
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
+
+		# uncomment these lines when we want to crop image by its bounding boxes
+		# crop_path = os.path.join(outfolder, 'crops')
+		# os.mkdir(crop_path)
+		# crop_image_into_boxes(imgcv, crop_path, resultsForJSON)
+
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
+
 		return
 
 	cv2.imwrite(img_name, imgcv)
