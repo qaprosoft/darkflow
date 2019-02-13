@@ -211,6 +211,18 @@ def append_text_to_result_json(result, words):
 	return result
 
 
+label_types = {
+	'button': 'buttons',
+	'label': 'labels',
+	'radiobutton': 'radiobuttons',
+	'tile': 'tiles',
+	'tile_hovered': 'tiles_hovered',
+	'checkbox': 'checkboxes',
+	'logo': 'logos',
+	'mess': 'messes'
+}
+
+
 def crop_image_into_boxes(im, outdir, result_list):
 	"""
 		Crops an original image into a list of images with found captions
@@ -218,13 +230,17 @@ def crop_image_into_boxes(im, outdir, result_list):
 		:param outdir: path where the crops is written
 		:param result_list: result dict with captions
 	"""
-	x_begin, x_end = result_list[0]['topleft']['x'], result_list[0]['bottomright']['x']
-	y_begin, y_end = result_list[0]['topleft']['y'], result_list[0]['bottomright']['y']
+	result_entry = result_list[0]
+	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
+	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
+	result_path = os.path.join(outdir, label_types[result_entry['label']])
+	if not os.path.exists(result_path):
+		os.mkdir(result_path)
 	if len(result_list) == 1:
-		cv2.imwrite("{}/{}.png".format(outdir, ''.join(random.sample((string.ascii_lowercase + string.digits), 10))), cropped)
+		cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
 		return
-	cv2.imwrite("{}/{}.png".format(outdir, ''.join(random.sample((string.ascii_lowercase + string.digits), 10))), cropped)
+	cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
 	return crop_image_into_boxes(im, outdir, result_list[1:])
 
 
@@ -278,17 +294,16 @@ def postprocess(self, net_out, im, save = True):
 			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 		else:
 			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
+
 		if resultsForJSON:
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
+
+		crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
+
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
-
-		# uncomment these lines when we want to crop image by its bounding boxes
-		# crop_path = os.path.join(outfolder, 'crops')
-		# os.mkdir(crop_path)
-		# crop_image_into_boxes(imgcv, crop_path, resultsForJSON)
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
