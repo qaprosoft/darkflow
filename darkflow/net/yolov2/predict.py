@@ -211,16 +211,9 @@ def append_text_to_result_json(result, words):
 	return result
 
 
-label_types = {
-	'button': 'buttons',
-	'label': 'labels',
-	'radiobutton': 'radiobuttons',
-	'tile': 'tiles',
-	'tile_hovered': 'tiles_hovered',
-	'checkbox': 'checkboxes',
-	'logo': 'logos',
-	'mess': 'messes'
-}
+def _create_dir_if_not_exists(path):
+	if not os.path.exists(path):
+		os.mkdir(path)
 
 
 def crop_image_into_boxes(im, outdir, result_list):
@@ -234,13 +227,12 @@ def crop_image_into_boxes(im, outdir, result_list):
 	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = os.path.join(outdir, label_types[result_entry['label']])
-	if not os.path.exists(result_path):
-		os.mkdir(result_path)
+	result_path = os.path.join(outdir, result_entry['label'] + 's')
+	_create_dir_if_not_exists(result_path)
 	if len(result_list) == 1:
-		cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
+		cv2.imwrite("{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))), cropped)
 		return
-	cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
+	cv2.imwrite("{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))), cropped)
 	return crop_image_into_boxes(im, outdir, result_list[1:])
 
 
@@ -300,10 +292,12 @@ def postprocess(self, net_out, im, save = True):
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 
-		crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
-
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
+
+		if self.FLAGS.ocr == "recursive":
+			print("Recursive")
+			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
