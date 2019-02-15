@@ -236,6 +236,22 @@ def crop_image_into_boxes(im, outdir, result_list):
 	return crop_image_into_boxes(im, outdir, result_list[1:])
 
 
+def get_list_of_label_types(result_list):
+	"""
+		Retrieves the all labels types from results of OCR (recursive mode)
+		:param result_list: dict with results of OCR
+		:return: list of image label types
+	"""
+	return set([result['label'] + 's' for result in result_list])
+
+
+def get_list_of_images_for_ocr(path):
+	"""
+		:param path: folder with an cropped images
+		:return: a list of images
+	"""
+
+
 def postprocess(self, net_out, im, save = True):
 	"""
 	Takes net output, draw net_out, save to disk
@@ -296,8 +312,10 @@ def postprocess(self, net_out, im, save = True):
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		if self.FLAGS.ocr == "recursive":
-			print("Recursive")
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
+			label_types = get_list_of_label_types(resultsForJSON)
+			for label_type in label_types:
+				images = get_list_of_images_for_ocr(os.path.join(outfolder, label_type))
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
