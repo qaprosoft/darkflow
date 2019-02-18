@@ -261,11 +261,11 @@ def get_captions_from_image(self, im):
 		:param im: image as np array
 		:return: list of captured text from an image
 	"""
-	if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
+	if self.FLAGS.ocr_threshold == True and self.FLAGS.ocr_gamma == 1.0:
 		prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-	elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
-		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
+	elif self.FLAGS.ocr_threshold == False and self.FLAGS.ocr_gamma != 1.0:
+		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 	return OCR.OCR.get_boxes_from_unprepared_image(im=im)
 
@@ -319,7 +319,7 @@ def postprocess(self, net_out, im, save = True):
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
-		if self.FLAGS.recursive == True:
+		if self.FLAGS.recursive_models:
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = get_list_of_label_types(resultsForJSON)
 			images_from_labels_dict = dict(zip(label_types, [compose_list_of_directory_entries(os.path.join(outfolder, label_type), ".png") for label_type in label_types] ))
