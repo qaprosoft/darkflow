@@ -42,6 +42,7 @@ class YOLOv2(framework):
     _batch = yolov2.data._batch
     resize_input = yolo.predict.resize_input
     findboxes = yolov2.predict.findboxes
+    get_captions_from_image = yolov2.predict.get_captions_from_image
     process_box = yolo.predict.process_box
 
 """

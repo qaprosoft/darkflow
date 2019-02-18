@@ -35,7 +35,7 @@ flags.DEFINE_string('pbLoad', '', 'path to .pb protobuf file (metaLoad must also
 flags.DEFINE_string('metaLoad', '', 'path to .meta file generated during --savepb that corresponds to .pb file')
 flags.DEFINE_float('gamma', 1.0, 'run with gamma-correction preparation method [0.04-25.0]')
 flags.DEFINE_boolean('threshold_prep', False, 'run thresholding preparation method')
-flags.DEFINE_string('ocr', 'regular', 'ocr execution mode')
+flags.DEFINE_boolean('recursive', False, 'ocr execution mode')
 
 FLAGS = flags.FLAGS
 

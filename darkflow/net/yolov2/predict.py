@@ -11,6 +11,8 @@ from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
 import multiprocessing
+from multiprocessing import Pool
+from functools import partial
 from pprint import pprint
 
 
@@ -229,12 +231,12 @@ def crop_image_into_boxes(im, outdir, result_list):
 	cropped = im[y_begin:y_end, x_begin:x_end]
 	result_path = os.path.join(outdir, result_entry['label'] + 's')
 	_create_dir_if_not_exists(result_path)
+	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
 	if len(result_list) == 1:
-		cv2.imwrite("{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))), cropped)
+		cv2.imwrite(cropped_path, cropped)
 		return
-	cv2.imwrite("{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))), cropped)
+	cv2.imwrite(cropped_path, cropped)
 	return crop_image_into_boxes(im, outdir, result_list[1:])
-
 
 def get_list_of_label_types(result_list):
 	"""
@@ -245,11 +247,27 @@ def get_list_of_label_types(result_list):
 	return set([result['label'] + 's' for result in result_list])
 
 
-def get_list_of_images_for_ocr(path):
+def compose_list_of_directory_entries(path, extension):
 	"""
 		:param path: folder with an cropped images
-		:return: a list of images
+		:param extension: an extension of files we interested
+		:return: a list of paths in directory
 	"""
+	return [dir_entry.path for dir_entry in list(os.scandir(path=path)) if not dir_entry.is_dir() and dir_entry.path.endswith(extension)]
+
+
+def get_captions_from_image(self, im):
+	"""
+		:param im: image as np array
+		:return: list of captured text from an image
+	"""
+	if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
+		prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+	elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
+		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.gamma)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+	return OCR.OCR.get_boxes_from_unprepared_image(im=im)
 
 
 def postprocess(self, net_out, im, save = True):
@@ -291,18 +309,8 @@ def postprocess(self, net_out, im, save = True):
 	outfolder = os.path.join(self.FLAGS.imgdir, 'out')
 	img_name = os.path.join(outfolder, os.path.basename(im))
 
-	prepared = None
-	captions = list()
 	if self.FLAGS.json:
-		if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=imgcv)
-			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=imgcv, gamma=self.FLAGS.gamma)
-			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		else:
-			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
-
+		captions = self.get_captions_from_image(imgcv)
 		if resultsForJSON:
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
@@ -311,12 +319,15 @@ def postprocess(self, net_out, im, save = True):
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
-		if self.FLAGS.ocr == "recursive":
+		if self.FLAGS.recursive == True:
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = get_list_of_label_types(resultsForJSON)
-			for label_type in label_types:
-				images = get_list_of_images_for_ocr(os.path.join(outfolder, label_type))
-
+			images_from_labels_dict = dict(zip(label_types, [compose_list_of_directory_entries(os.path.join(outfolder, label_type), ".png") for label_type in label_types] ))
+			captions_dict = dict()
+			for label in images_from_labels_dict.keys():
+				with Pool(processes=len(images_from_labels_dict[label])) as pool:
+					imcv_list = pool.map(cv2.imread, images_from_labels_dict[label])
+					captions_dict[label] = pool.map(self.get_captions_from_image, imcv_list)
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
 
