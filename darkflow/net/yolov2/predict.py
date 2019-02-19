@@ -10,11 +10,7 @@ from ...cython_utils.cy_yolo2_findboxes import box_constructor
 from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
-import multiprocessing
-from multiprocessing import Pool
-from functools import partial
-from pprint import pprint
-
+import subprocess
 
 def _get_center_coordinate(coordinates):
     x1 = coordinates[0]
@@ -310,12 +306,18 @@ def postprocess(self, net_out, im, save = True):
 
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
-
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = get_list_of_label_types(resultsForJSON)
 			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
+			for folder in folders_to_recognize:
+				generation_command = "/qps-ai/darkflow/flow --imgdir {0} --backup {1} --load {2} --model {3} --json --labels {4}".format(folder, self.FLAGS.backup, self.FLAGS.load, self.FLAGS.model, self.FLAGS.labels)
+				if self.FLAGS.ocr_gamma:
+					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+				elif self.FLAGS.ocr_threshold:
+					generation_command += " --ocr_threshold " + str(self.FLAGS.ocr_threshold)
+				subprocess.call(generation_command, shell=True)
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
