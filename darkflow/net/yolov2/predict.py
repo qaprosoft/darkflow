@@ -10,9 +10,7 @@ from ...cython_utils.cy_yolo2_findboxes import box_constructor
 from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
-import multiprocessing
-from pprint import pprint
-
+import subprocess
 
 def _get_center_coordinate(coordinates):
     x1 = coordinates[0]
@@ -211,16 +209,9 @@ def append_text_to_result_json(result, words):
 	return result
 
 
-label_types = {
-	'button': 'buttons',
-	'label': 'labels',
-	'radiobutton': 'radiobuttons',
-	'tile': 'tiles',
-	'tile_hovered': 'tiles_hovered',
-	'checkbox': 'checkboxes',
-	'logo': 'logos',
-	'mess': 'messes'
-}
+def _create_dir_if_not_exists(path):
+	if not os.path.exists(path):
+		os.mkdir(path)
 
 
 def crop_image_into_boxes(im, outdir, result_list):
@@ -234,14 +225,37 @@ def crop_image_into_boxes(im, outdir, result_list):
 	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = os.path.join(outdir, label_types[result_entry['label']])
-	if not os.path.exists(result_path):
-		os.mkdir(result_path)
+	result_path = os.path.join(outdir, result_entry['label'] + 's')
+	_create_dir_if_not_exists(result_path)
+	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
 	if len(result_list) == 1:
-		cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
+		cv2.imwrite(cropped_path, cropped)
 		return
-	cv2.imwrite("{}/{}{}.png".format(result_path, result_entry['label'], ''.join(random.sample((string.digits), 5))), cropped)
+	cv2.imwrite(cropped_path, cropped)
 	return crop_image_into_boxes(im, outdir, result_list[1:])
+
+
+def get_list_of_label_types(result_list):
+	"""
+		Retrieves the all labels types from results of OCR (recursive mode)
+		:param result_list: dict with results of OCR
+		:return: unique set of image label types
+	"""
+	return {result['label'] + 's' for result in result_list}
+
+
+def get_captions_from_image(self, im):
+	"""
+		:param im: image as np array
+		:return: list of captured text from an image
+	"""
+	if self.FLAGS.ocr_threshold:
+		prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+	elif self.FLAGS.ocr_gamma:
+		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+	return OCR.OCR.get_boxes_from_unprepared_image(im=im)
 
 
 def postprocess(self, net_out, im, save = True):
@@ -283,27 +297,27 @@ def postprocess(self, net_out, im, save = True):
 	outfolder = os.path.join(self.FLAGS.imgdir, 'out')
 	img_name = os.path.join(outfolder, os.path.basename(im))
 
-	prepared = None
-	captions = list()
 	if self.FLAGS.json:
-		if self.FLAGS.threshold_prep == True and self.FLAGS.gamma == 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=imgcv)
-			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		elif self.FLAGS.threshold_prep == False and self.FLAGS.gamma != 1.0:
-			prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=imgcv, gamma=self.FLAGS.gamma)
-			captions = OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-		else:
-			captions = OCR.OCR.get_boxes_from_unprepared_image(im=im)
-
+		captions = self.get_captions_from_image(imgcv)
 		if resultsForJSON:
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 
-		crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
-
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
+		if self.FLAGS.recursive_models:
+			models_from_cli = set(self.FLAGS.recursive_models.split(","))
+			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
+			label_types = get_list_of_label_types(resultsForJSON)
+			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
+			for folder in folders_to_recognize:
+				generation_command = "/qps-ai/darkflow/flow --imgdir {0} --backup {1} --load {2} --model {3} --json --labels {4}".format(folder, self.FLAGS.backup, self.FLAGS.load, self.FLAGS.model, self.FLAGS.labels)
+				if self.FLAGS.ocr_gamma:
+					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+				elif self.FLAGS.ocr_threshold:
+					generation_command += " --ocr_threshold " + str(self.FLAGS.ocr_threshold)
+				subprocess.call(generation_command, shell=True)
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
