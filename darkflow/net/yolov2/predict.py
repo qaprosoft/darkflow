@@ -238,22 +238,14 @@ def crop_image_into_boxes(im, outdir, result_list):
 	cv2.imwrite(cropped_path, cropped)
 	return crop_image_into_boxes(im, outdir, result_list[1:])
 
+
 def get_list_of_label_types(result_list):
 	"""
 		Retrieves the all labels types from results of OCR (recursive mode)
 		:param result_list: dict with results of OCR
-		:return: list of image label types
+		:return: unique set of image label types
 	"""
-	return set([result['label'] + 's' for result in result_list])
-
-
-def compose_list_of_directory_entries(path, extension):
-	"""
-		:param path: folder with an cropped images
-		:param extension: an extension of files we interested
-		:return: a list of paths in directory
-	"""
-	return [dir_entry.path for dir_entry in list(os.scandir(path=path)) if not dir_entry.is_dir() and dir_entry.path.endswith(extension)]
+	return {result['label'] + 's' for result in result_list}
 
 
 def get_captions_from_image(self, im):
@@ -261,10 +253,10 @@ def get_captions_from_image(self, im):
 		:param im: image as np array
 		:return: list of captured text from an image
 	"""
-	if self.FLAGS.ocr_threshold == True and self.FLAGS.ocr_gamma == 1.0:
+	if self.FLAGS.ocr_threshold:
 		prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-	elif self.FLAGS.ocr_threshold == False and self.FLAGS.ocr_gamma != 1.0:
+	elif self.FLAGS.ocr_gamma:
 		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 	return OCR.OCR.get_boxes_from_unprepared_image(im=im)
@@ -320,14 +312,11 @@ def postprocess(self, net_out, im, save = True):
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		if self.FLAGS.recursive_models:
+			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = get_list_of_label_types(resultsForJSON)
-			images_from_labels_dict = dict(zip(label_types, [compose_list_of_directory_entries(os.path.join(outfolder, label_type), ".png") for label_type in label_types] ))
-			captions_dict = dict()
-			for label in images_from_labels_dict.keys():
-				with Pool(processes=len(images_from_labels_dict[label])) as pool:
-					imcv_list = pool.map(cv2.imread, images_from_labels_dict[label])
-					captions_dict[label] = pool.map(self.get_captions_from_image, imcv_list)
+			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
+
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
 
