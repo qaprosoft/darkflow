@@ -11,6 +11,10 @@ from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
 import subprocess
+from pprint import pprint
+from multiprocessing import Pool
+from functools import partial
+
 
 def _get_center_coordinate(coordinates):
     x1 = coordinates[0]
@@ -235,15 +239,6 @@ def crop_image_into_boxes(im, outdir, result_list):
 	return crop_image_into_boxes(im, outdir, result_list[1:])
 
 
-def get_list_of_label_types(result_list):
-	"""
-		Retrieves the all labels types from results of OCR (recursive mode)
-		:param result_list: dict with results of OCR
-		:return: unique set of image label types
-	"""
-	return {result['label'] + 's' for result in result_list}
-
-
 def get_captions_from_image(self, im):
 	"""
 		:param im: image as np array
@@ -304,19 +299,27 @@ def postprocess(self, net_out, im, save = True):
 
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
-		if self.FLAGS.recursive_models:
-			models_from_cli = set(self.FLAGS.recursive_models.split(","))
-			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
-			label_types = get_list_of_label_types(resultsForJSON)
-			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
-			for folder in folders_to_recognize:
-				generation_command = "/qps-ai/darkflow/flow --imgdir {0} --backup {1} --load {2} --model {3} --json --labels {4}".format(folder, self.FLAGS.backup, self.FLAGS.load, self.FLAGS.model, self.FLAGS.labels)
-				if self.FLAGS.ocr_gamma:
-					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-				subprocess.call(generation_command, shell=True)
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
+
+		if self.FLAGS.recursive_models:
+			models_from_cli = set(self.FLAGS.recursive_models.split(","))
+			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
+			label_types = {result['label'] + 's' for result in resultsForJSON}
+			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
+			#for folder in folders_to_recognize:
+			#	generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model nhl --folder {0} --output json".format(folder)
+			#	if self.FLAGS.ocr_gamma:
+			#		generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+			#	subprocess.call(generation_command, shell=True)
+			call_with_fixed_shell = partial(subprocess.call, shell=True)
+			generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model nhl --folder {} --output json"
+			if self.FLAGS.ocr_gamma:
+				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+			commands = [generation_command.format(folder) for folder in folders_to_recognize]
+			with Pool(processes=len(folders_to_recognize)) as pool:
+				pool.map(call_with_fixed_shell, commands)
 
 		return
 
