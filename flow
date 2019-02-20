@@ -34,7 +34,6 @@ flags.DEFINE_boolean("saveVideo", False, "Records video from input video or came
 flags.DEFINE_string('pbLoad', '', 'path to .pb protobuf file (metaLoad must also be specified)')
 flags.DEFINE_string('metaLoad', '', 'path to .meta file generated during --savepb that corresponds to .pb file')
 flags.DEFINE_float('ocr_gamma', None, 'run with gamma-correction preparation method [0.04-25.0]')
-flags.DEFINE_boolean('ocr_threshold', None, 'run thresholding preparation method')
 flags.DEFINE_string('recursive_models', None, 'list of recognition models')
 
 FLAGS = flags.FLAGS
