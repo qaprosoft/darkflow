@@ -308,12 +308,12 @@ def postprocess(self, net_out, im, save = True):
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = {result['label'] + 's' for result in resultsForJSON}
 			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
-			call_with_fixed_shell = partial(subprocess.call, shell=True)
-			generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model nhl --folder {} --output json"
-			if self.FLAGS.ocr_gamma:
-				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-			commands = [generation_command.format(folder) for folder in folders_to_recognize]
 			with Pool(processes=len(folders_to_recognize)) as pool:
+				call_with_fixed_shell = partial(subprocess.call, shell=True)
+				generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model nhl --folder {} --output json"
+				if self.FLAGS.ocr_gamma:
+					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+				commands = [generation_command.format(folder) for folder in folders_to_recognize]
 				pool.map(call_with_fixed_shell, commands)
 
 		return
