@@ -249,13 +249,11 @@ def get_captions_from_image(self, im):
 		:param im: image as np array
 		:return: list of captured text from an image
 	"""
-	if self.FLAGS.ocr_threshold:
-		prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
-		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-	elif self.FLAGS.ocr_gamma:
+	if self.FLAGS.ocr_gamma:
 		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-	return OCR.OCR.get_boxes_from_unprepared_image(im=im)
+	prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
+	return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
 
 
 def postprocess(self, net_out, im, save = True):
@@ -315,8 +313,6 @@ def postprocess(self, net_out, im, save = True):
 				generation_command = "/qps-ai/darkflow/flow --imgdir {0} --backup {1} --load {2} --model {3} --json --labels {4}".format(folder, self.FLAGS.backup, self.FLAGS.load, self.FLAGS.model, self.FLAGS.labels)
 				if self.FLAGS.ocr_gamma:
 					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-				elif self.FLAGS.ocr_threshold:
-					generation_command += " --ocr_threshold " + str(self.FLAGS.ocr_threshold)
 				subprocess.call(generation_command, shell=True)
 
 		with open(textFile, 'w') as f:
