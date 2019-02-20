@@ -229,7 +229,7 @@ def crop_image_into_boxes(im, outdir, result_list):
 	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = os.path.join(outdir, result_entry['label'] + 's')
+	result_path = os.path.join(outdir, result_entry['label'])
 	_create_dir_if_not_exists(result_path)
 	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
 	if len(result_list) == 1:
@@ -306,7 +306,7 @@ def postprocess(self, net_out, im, save = True):
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
-			label_types = {result['label'] + 's' for result in resultsForJSON}
+			label_types = {result['label'] for result in resultsForJSON}
 			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
 			with Pool(processes=len(folders_to_recognize)) as pool:
 				call_with_fixed_shell = partial(subprocess.call, shell=True)
