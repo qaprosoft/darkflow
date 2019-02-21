@@ -11,7 +11,6 @@ from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
 import subprocess
-from pprint import pprint
 from multiprocessing import Pool
 from functools import partial
 
@@ -307,13 +306,15 @@ def postprocess(self, net_out, im, save = True):
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = {result['label'] for result in resultsForJSON}
-			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
+			labels_to_recognize = label_types.intersection(models_from_cli)
+			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
 			with Pool(processes=len(folders_to_recognize)) as pool:
 				call_with_fixed_shell = partial(subprocess.call, shell=True)
-				generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model nhl --folder {} --output json"
+				generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model {} --folder {} --output json"
+				arg_pairs = list(zip(labels_to_recognize, folders_to_recognize))
 				if self.FLAGS.ocr_gamma:
 					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-				commands = [generation_command.format(folder) for folder in folders_to_recognize]
+				commands = [generation_command.format(*arg_pair) for arg_pair in arg_pairs]
 				pool.map(call_with_fixed_shell, commands)
 
 		return
