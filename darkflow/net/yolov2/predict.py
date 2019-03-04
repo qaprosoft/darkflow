@@ -352,6 +352,9 @@ def postprocess(self, net_out, im, save = True):
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 
+		textJSON = json.dumps(resultsForJSON)
+		textFile = os.path.splitext(img_name)[0] + ".json"
+
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
@@ -373,7 +376,6 @@ def postprocess(self, net_out, im, save = True):
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
-
 		return
 
 	cv2.imwrite(img_name, imgcv)
