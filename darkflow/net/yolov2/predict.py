@@ -5,12 +5,17 @@ import math
 import cv2
 import os
 import json
+import itertools
+import shutil
 from ...utils.box import BoundBox
 from ...cython_utils.cy_yolo2_findboxes import box_constructor
 from . import OCR
 from math import sqrt
 from joblib import Parallel, delayed
 import subprocess
+from multiprocessing import Pool
+from functools import partial
+
 
 def _get_center_coordinate(coordinates):
     x1 = coordinates[0]
@@ -194,18 +199,18 @@ def _get_area_of_word(box):
 
 def append_text_to_result_json(result, words):
 	"""
-		Appends the captions from OCR into the labels from nnet
-		:param result: a single dict record from the nnet result
-		:param words: list of captions from OCR
-		:return result: modified value with caption text
+	Appends the captions from OCR into the labels from nnet
+	:param result: a single dict record from the nnet result
+	:param words: list of captions from OCR
+	:return result: modified value with caption text
 	"""
-	areas = []
-	result["caption"] = ""
+	result["caption"] = ''
 	for word in words:
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
 		if _get_overlap_rectangle_area(word[:4], rect) >= _get_area_of_word(word[:4]):
 			result["caption"] = result["caption"] + " " + word[-1]
+			result["caption"] = result["caption"].lstrip()
 	return result
 
 
@@ -216,16 +221,16 @@ def _create_dir_if_not_exists(path):
 
 def crop_image_into_boxes(im, outdir, result_list):
 	"""
-		Crops an original image into a list of images with found captions
-		:param im: original image as np array
-		:param outdir: path where the crops is written
-		:param result_list: result dict with captions
+	Crops an original image into a list of images with found captions
+	:param im: original image as np array
+	:param outdir: path where the crops is written
+	:param result_list: result dict with captions
 	"""
 	result_entry = result_list[0]
 	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = os.path.join(outdir, result_entry['label'] + 's')
+	result_path = os.path.join(outdir, result_entry['label'])
 	_create_dir_if_not_exists(result_path)
 	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
 	if len(result_list) == 1:
@@ -237,17 +242,62 @@ def crop_image_into_boxes(im, outdir, result_list):
 
 def get_list_of_label_types(result_list):
 	"""
-		Retrieves the all labels types from results of OCR (recursive mode)
-		:param result_list: dict with results of OCR
-		:return: unique set of image label types
+	Retrieves the all labels types from results of OCR (recursive mode)
+	:param result_list: dict with results of OCR
+	:return: unique set of image label types
 	"""
-	return {result['label'] + 's' for result in result_list}
+	return {result['label'] for result in result_list}
+
+
+def get_path_entries(predicate, path):
+	"""
+	:param predicate: filter criteria for filtering directory entries
+	:param path: path to dir for searching
+	"""
+	return list(map(lambda x: x.path, filter(predicate, os.scandir(path))))
+
+
+def get_obj_from_json(path):
+	with open(path, 'r') as f:
+		return json.load(f)
+
+
+def merge_jsones_from_recursive_call(folders, results):
+	"""
+	Merge jsones from recursive call into result json and then deletes folders
+	:param folders: a list of folders contains jsones
+	:param results: result list from first non-recursive call
+	:return: merged list of results
+	"""
+	models_to_labels = {
+		"team": "label",
+		"logo": "logo"
+	}
+
+	path_splitter = '/' if os.name == 'posix' else '\\'
+	for folder in folders:
+		out_folder = os.path.join(folder, 'out')
+		json_paths = get_path_entries(lambda x: x.path.endswith('.json'), out_folder)
+		jsones = list()
+		for single_path in json_paths:
+			obj_from_json = get_obj_from_json(single_path)
+			jsones.append(obj_from_json)
+		for result in results:
+			model = folder.split(path_splitter)[-1]
+			for json_list in jsones:
+				for single_json in json_list:
+					if single_json['label'] == models_to_labels[model] and single_json['caption'].lower() in result['caption'].lower():
+						result[model] = None
+						result[model] = json_list
+						break
+		shutil.rmtree(folder)
+	return results
 
 
 def get_captions_from_image(self, im):
 	"""
-		:param im: image as np array
-		:return: list of captured text from an image
+	:param im: image as np array
+	:return: list of captured text from an image
 	"""
 	if self.FLAGS.ocr_gamma:
 		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
@@ -302,18 +352,24 @@ def postprocess(self, net_out, im, save = True):
 				result = append_text_to_result_json(result, captions)
 			find_labels_for_controls(resultsForJSON)
 
-		textJSON = json.dumps(resultsForJSON)
-		textFile = os.path.splitext(img_name)[0] + ".json"
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
-			label_types = get_list_of_label_types(resultsForJSON)
-			folders_to_recognize = [os.path.join(outfolder, label) for label in label_types.intersection(models_from_cli)]
-			for folder in folders_to_recognize:
-				generation_command = "/qps-ai/darkflow/flow --imgdir {0} --backup {1} --load {2} --model {3} --json --labels {4}".format(folder, self.FLAGS.backup, self.FLAGS.load, self.FLAGS.model, self.FLAGS.labels)
-				if self.FLAGS.ocr_gamma:
-					generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-				subprocess.call(generation_command, shell=True)
+			label_types = {result['label'] for result in resultsForJSON}
+			labels_to_recognize = label_types.intersection(models_from_cli)
+			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
+			call_with_fixed_shell = partial(subprocess.run, shell=True)
+			generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model {} --folder {} --output json"
+			if self.FLAGS.ocr_gamma:
+				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
+			arg_pairs = list(zip(labels_to_recognize, folders_to_recognize))
+			commands = [generation_command.format(*arg_pair) for arg_pair in arg_pairs]
+			for command in commands:
+				call_with_fixed_shell(command)
+
+			resultsForJSON = merge_jsones_from_recursive_call(folders_to_recognize, resultsForJSON)
+		textJSON = json.dumps(resultsForJSON)
+		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		with open(textFile, 'w') as f:
 			f.write(textJSON)
