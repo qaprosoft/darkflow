@@ -46,7 +46,6 @@ def _get_min_distance_coordinates(config, coordinate, _dict, _class="label"):
             coordinate - (x1, y1, x2, y2)
             _dict - current dict of nearest coordinates to the caption
             label - label of coordinate
-
         return coordinate of the nearest label to the current caption
     """
     distances = {} # (coordinate): distance
@@ -219,7 +218,7 @@ def _create_dir_if_not_exists(path):
 		os.mkdir(path)
 
 
-def crop_image_into_boxes(im, outdir, result_list):
+def crop_image_into_boxes(im, outdir, labels, result_list):
 	"""
 	Crops an original image into a list of images with found captions
 	:param im: original image as np array
@@ -230,14 +229,16 @@ def crop_image_into_boxes(im, outdir, result_list):
 	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
 	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = os.path.join(outdir, result_entry['label'])
-	_create_dir_if_not_exists(result_path)
+	result_path = ""
+	if result_entry['label'] in labels:
+		result_path = os.path.join(outdir, result_entry['label'])
+		_create_dir_if_not_exists(result_path)
 	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
 	if len(result_list) == 1:
 		cv2.imwrite(cropped_path, cropped)
 		return
 	cv2.imwrite(cropped_path, cropped)
-	return crop_image_into_boxes(im, outdir, result_list[1:])
+	return crop_image_into_boxes(im, outdir, labels, result_list[1:])
 
 
 def get_list_of_label_types(result_list):
@@ -357,9 +358,9 @@ def postprocess(self, net_out, im, save = True):
 
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
-			crop_image_into_boxes(imgcv, outfolder, resultsForJSON)
 			label_types = {result['label'] for result in resultsForJSON}
 			labels_to_recognize = label_types.intersection(models_from_cli)
+			crop_image_into_boxes(imgcv, outfolder, labels_to_recognize, resultsForJSON)
 			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
 			call_with_fixed_shell = partial(subprocess.run, shell=True)
 			generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model {} --folder {} --output json"
@@ -369,7 +370,6 @@ def postprocess(self, net_out, im, save = True):
 			commands = [generation_command.format(*arg_pair) for arg_pair in arg_pairs]
 			for command in commands:
 				call_with_fixed_shell(command)
-
 			resultsForJSON = merge_jsones_from_recursive_call(folders_to_recognize, resultsForJSON)
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
