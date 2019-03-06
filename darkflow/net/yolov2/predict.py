@@ -233,7 +233,7 @@ def crop_image_into_boxes(im, outdir, labels, result_list):
 	if result_entry['label'] in labels:
 		result_path = os.path.join(outdir, result_entry['label'])
 		_create_dir_if_not_exists(result_path)
-	cropped_path = "{}/{}.png".format(result_path, result_entry.get('caption') if result_entry.get('caption') not in ('', ' ') else ''.join(random.sample((string.digits), 5))).replace(" ", "_")
+	cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
 	if len(result_list) == 1:
 		cv2.imwrite(cropped_path, cropped)
 		return
@@ -279,18 +279,23 @@ def merge_jsones_from_recursive_call(folders, results):
 	for folder in folders:
 		out_folder = os.path.join(folder, 'out')
 		json_paths = get_path_entries(lambda x: x.path.endswith('.json'), out_folder)
-		jsones = list()
-		for single_path in json_paths:
-			obj_from_json = get_obj_from_json(single_path)
-			jsones.append(obj_from_json)
+		json_names = [json_path.split(path_splitter)[-1].split('.')[0] for json_path in json_paths]
+		jsones = dict()
+		for json_name in json_names:
+			for json_path in json_paths:
+				if json_name in json_path:
+					jsones[json_name] = get_obj_from_json(json_path)
+
 		for result in results:
 			model = folder.split(path_splitter)[-1]
-			for json_list in jsones:
-				for single_json in json_list:
-					if single_json['label'] == models_to_labels[model] and single_json['caption'].lower() in result['caption'].lower():
-						result[model] = None
-						result[model] = json_list
-						break
+			for k in jsones.keys():
+				topleft_x, topleft_y = int(k.split('-')[0]), int(k.split('-')[1])
+				botright_x, botright_y = int(k.split('-')[2]), int(k.split('-')[3])
+				if topleft_x == result["topleft"]["x"] and topleft_y == result["topleft"]["y"] and botright_x == result['bottomright']['x'] and botright_y == result['bottomright']['y']:
+					result[model] = None
+					result[model] = jsones[k]
+					break
+
 		shutil.rmtree(folder)
 	return results
 
@@ -357,17 +362,17 @@ def postprocess(self, net_out, im, save = True):
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		if self.FLAGS.recursive_models:
+			DARKFLOW_HOME_PATH = os.environ.get('DARKFLOW_HOME')
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			label_types = {result['label'] for result in resultsForJSON}
 			labels_to_recognize = label_types.intersection(models_from_cli)
-			model_paths = ['/qps-ai/darkflow/cfg/' + model + '.cfg' for model in labels_to_recognize]
+			model_paths = [DARKFLOW_HOME_PATH + '/cfg/' + model + '.cfg' for model in labels_to_recognize]
 			crop_image_into_boxes(imgcv, outfolder, labels_to_recognize, resultsForJSON)
 			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
-			label_paths = ['/qps-ai/darkflow/labels-' + label + '.txt' for label in labels_to_recognize]
-			backup_paths = ['/qps-ai/darkflow/ckpt/' + backup + '/' for backup in labels_to_recognize]
+			label_paths = [DARKFLOW_HOME_PATH + '/labels-' + label + '.txt' for label in labels_to_recognize]
+			backup_paths = [DARKFLOW_HOME_PATH + '/ckpt/' + backup + '/' for backup in labels_to_recognize]
 			call_with_fixed_shell = partial(subprocess.run, shell=True)
-			generation_command = "/qps-ai/darkflow/flow --model {} --load -1 --imgdir {} --json --labels {} --backup {}"
-			labels_path = "/qps-ai/darkflow/cfg"
+			generation_command = DARKFLOW_HOME_PATH + "/flow --model {} --load -1 --imgdir {} --json --labels {} --backup {}"
 			if self.FLAGS.ocr_gamma:
 				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
 			arg_pairs = list(zip(model_paths, folders_to_recognize, label_paths, backup_paths))
