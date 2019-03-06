@@ -360,13 +360,17 @@ def postprocess(self, net_out, im, save = True):
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			label_types = {result['label'] for result in resultsForJSON}
 			labels_to_recognize = label_types.intersection(models_from_cli)
+			model_paths = ['/qps-ai/darkflow/cfg/' + model + '.cfg' for model in labels_to_recognize]
 			crop_image_into_boxes(imgcv, outfolder, labels_to_recognize, resultsForJSON)
 			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
+			label_paths = ['/qps-ai/darkflow/labels-' + label + '.txt' for label in labels_to_recognize]
+			backup_paths = ['/qps-ai/darkflow/ckpt/' + backup + '/' for backup in labels_to_recognize]
 			call_with_fixed_shell = partial(subprocess.run, shell=True)
-			generation_command = "python recognize.py --darkflow_home /qps-ai/darkflow --model {} --folder {} --output json"
+			generation_command = "/qps-ai/darkflow/flow --model {} --load -1 --imgdir {} --json --labels {} --backup {}"
+			labels_path = "/qps-ai/darkflow/cfg"
 			if self.FLAGS.ocr_gamma:
 				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
-			arg_pairs = list(zip(labels_to_recognize, folders_to_recognize))
+			arg_pairs = list(zip(model_paths, folders_to_recognize, label_paths, backup_paths))
 			commands = [generation_command.format(*arg_pair) for arg_pair in arg_pairs]
 			for command in commands:
 				call_with_fixed_shell(command)

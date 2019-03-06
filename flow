@@ -3,6 +3,7 @@
 from darkflow.net.build import TFNet
 from tensorflow import flags
 import os
+import shutil
 
 flags.DEFINE_string('imgdir', './sample_img/', 'path to testing directory with images')
 flags.DEFINE_string("binary", "./bin/", "path to .weights directory")
@@ -37,6 +38,12 @@ flags.DEFINE_float('ocr_gamma', None, 'run with gamma-correction preparation met
 flags.DEFINE_string('recursive_models', None, 'list of recognition models')
 
 FLAGS = flags.FLAGS
+
+# first, remove old out folder
+out_folder = FLAGS.imgdir + '/out'
+if os.path.exists(out_folder):
+	print("Removing outfolder")
+	shutil.rmtree(FLAGS.imgdir + '/out')
 
 # make sure all necessary dirs exist
 def get_dir(dirs):
