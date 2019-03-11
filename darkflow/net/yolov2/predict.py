@@ -184,12 +184,27 @@ def find_right_label(control, labels, delta_x, delta_y):
 	return None
 
 
-def _get_overlap_rectangle_area(boxA, boxB):
-	xA = max(boxA[0], boxB[0])
-	yA = max(boxA[1], boxB[1])
-	xB = min(boxA[2], boxB[2])
-	yB = min(boxA[3], boxB[3])
-	return max(0, xB - xA + 1) * max(0, yB - yA + 1)
+def _get_overlap_rectangle_area(word, res):
+	#r1x1 r1y1 r1x2 r1y2
+	#r2x1 r2y1 r2x2 r2y2
+
+	r1l = min(word[0], word[2])
+	r1r = max(word[0], word[2])
+	r1t = min(word[1], word[3])
+	r1b = max(word[1], word[3])
+
+	#r2l, r2r, r2t, r2b = ...
+	r2l = min(res[0], res[2])
+	r2r = max(res[0], res[2])
+	r2t = min(res[1], res[3])
+	r2b = max(res[1], res[3])
+
+	left = max(r1l, r2l)
+	right = min(r1r, r2r)
+	top = max(r1t, r2t)
+	bottom = min(r1b, r2b)
+
+	return max(right - left, 0) * max(bottom - top, 0)
 
 
 def _get_area_of_word(box):
@@ -205,9 +220,13 @@ def append_text_to_result_json(result, words):
 	"""
 	result["caption"] = ''
 	for word in words:
+		#print("caption: ", result["caption"])
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
 		if _get_overlap_rectangle_area(word[:4], rect) >= _get_area_of_word(word[:4]):
+			#print("word: ", word[-1])
+			#print("overlap :", _get_overlap_rectangle_area(word[:4], rect))
+			#print("word square :", _get_area_of_word(word[:4]))
 			result["caption"] = result["caption"] + " " + word[-1]
 			result["caption"] = result["caption"].lstrip()
 	return result
@@ -337,7 +356,8 @@ def postprocess(self, net_out, im, save = True):
 		left, right, top, bot, mess, max_indx, confidence = boxResults
 		thick = 2 #int((h + w) // 300)
 		if self.FLAGS.json:
-			resultsForJSON.append({"label": mess, "confidence": float('%.2f' % confidence), "topleft": {"x": left, "y": top}, "bottomright": {"x": right, "y": bot}})
+			if confidence > 0.5:
+				resultsForJSON.append({"label": mess, "confidence": float('%.2f' % confidence), "topleft": {"x": left, "y": top}, "bottomright": {"x": right, "y": bot}})
 			continue
 
 		cv2.rectangle(imgcv,
@@ -356,7 +376,7 @@ def postprocess(self, net_out, im, save = True):
 		if resultsForJSON:
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
-			find_labels_for_controls(resultsForJSON)
+			#find_labels_for_controls(resultsForJSON)
 
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
