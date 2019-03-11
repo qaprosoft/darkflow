@@ -364,17 +364,13 @@ def postprocess(self, net_out, im, save = True):
 		if self.FLAGS.recursive_models:
 			DARKFLOW_HOME = os.environ.get('DARKFLOW_HOME')
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
-			label_types = {result['label'] for result in resultsForJSON}
-			labels_to_recognize = label_types.intersection(models_from_cli)
-			model_paths = [DARKFLOW_HOME + '/cfg/' + model + '.cfg' for model in labels_to_recognize]
-			crop_image_into_boxes(imgcv, outfolder, labels_to_recognize, resultsForJSON)
-			folders_to_recognize = [os.path.join(outfolder, label) for label in labels_to_recognize]
-			label_paths = [DARKFLOW_HOME + '/labels-' + label + '.txt' for label in labels_to_recognize]
-			backup_paths = [DARKFLOW_HOME + '/ckpt/' + backup + '/' for backup in labels_to_recognize]
+			model_paths = [DARKFLOW_HOME + '/cfg/' + model + '.cfg' for model in models_from_cli]
+			crop_image_into_boxes(imgcv, outfolder, models_from_cli, resultsForJSON)
+			folders_to_recognize = [os.path.join(outfolder, label) for label in models_from_cli]
+			label_paths = [DARKFLOW_HOME + '/labels-' + label + '.txt' for label in models_from_cli]
+			backup_paths = [DARKFLOW_HOME + '/ckpt/' + backup + '/' for backup in models_from_cli]
 			call_with_fixed_shell = partial(subprocess.run, shell=True)
 			generation_command = DARKFLOW_HOME + "/flow --model {} --load -1 --imgdir {} --json --labels {} --backup {}"
-			if self.FLAGS.ocr_gamma:
-				generation_command += " --ocr_gamma " + str(self.FLAGS.ocr_gamma)
 			arg_pairs = list(zip(model_paths, folders_to_recognize, label_paths, backup_paths))
 			commands = [generation_command.format(*arg_pair) for arg_pair in arg_pairs]
 			for command in commands:

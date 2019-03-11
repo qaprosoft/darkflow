@@ -43,11 +43,10 @@ class OCR:
             :param im: path to an image
             :return: prepared image as PIL image
         """
-        resized = cv2.resize(im, None, fx=2, fy=2, interpolation=cv2.INTER_LANCZOS4)
+        resized = cv2.resize(im, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
         image = np.array(resized)
-        image = threshold_sauvola(image, window_size=3, k=0.05)
         image = cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_BGR2GRAY)
-        image = cv2.threshold(image, 0, 255, cv2.THRESH_TOZERO | cv2.THRESH_OTSU)[1]
+        image = cv2.threshold(cv2.GaussianBlur(image, (9, 9), 1), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         return Image.fromarray(image.astype(np.uint8))
 
     @staticmethod
