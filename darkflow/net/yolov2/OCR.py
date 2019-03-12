@@ -28,7 +28,7 @@ class OCR:
             np.array([95, 102, 115]),
             np.array([246, 246, 246])
         ]  # range from most darkest to most brightest font
-        resized = cv2.resize(im, None, fx=1, fy=1, interpolation=cv2.INTER_LANCZOS4)
+        resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mask = cv2.inRange(rgb, font_colors[0], font_colors[1])
