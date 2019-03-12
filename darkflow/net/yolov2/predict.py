@@ -17,6 +17,9 @@ from multiprocessing import Pool
 from functools import partial
 
 
+DARKFLOW_HOME = os.environ.get('DARKFLOW_HOME')
+
+
 def _get_center_coordinate(coordinates):
     x1 = coordinates[0]
     y1 = coordinates[1]
@@ -119,81 +122,12 @@ def findboxes(self, net_out):
 	return boxes
 
 
-def find_labels_for_controls(JSONResult):
-    delta_left_x = 50.0
-    delta_left_y = 7.0
-    delta_top_x = 5
-    delta_top_y = 5
-    delta_right_x = 50
-    delta_right_y = 5
-    labels = []
-    controls = []
-    for item in JSONResult:
-        if item['label'] == 'label':
-            labels.append(item)
-        elif item['label'] != 'button':
-            controls.append(item)
-
-    for item in controls:
-        if item['label'] == 'text_field':
-            if delta_left_y > item['bottomright']['y'] - item['topleft']['y']:
-                delta_left_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
-                delta_right_y = (item['bottomright']['y'] - item['topleft']['y']) * 0.5
-            if delta_left_x > item['bottomright']['x'] - item['topleft']['x']:
-                delta_left_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
-                delta_right_x = (item['bottomright']['x'] - item['topleft']['x']) * 0.3
-
-    for control in controls:
-        label = find_left_label(control, labels, delta_left_x, delta_left_y)
-        if label is None:
-            label = find_top_label(control, labels, delta_top_x, delta_top_y)
-        if label is None:
-            label = find_right_label(control, labels, delta_right_x, delta_right_y)
-        if label is not None:
-            control['caption'] = label.get('caption')
-
-
-
-def find_left_label(control, labels, delta_x, delta_y):
-	for label in labels:
-		if (control['bottomright']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['bottomright']['y'] - delta_y):
-			if (control['topleft']['x'] + delta_x > label['bottomright']['x']) and (label['bottomright']['x'] > control['topleft']['x'] - delta_x):
-				return label
-		else:
-			continue
-	return None
-
-
-def find_top_label(control, labels, delta_x, delta_y):
-    for label in labels:
-        if (control['topleft']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['topleft']['x'] - delta_x):
-            if (control['topleft']['y'] + delta_y > label['bottomright']['y']) and (label['bottomright']['y'] > control['topleft']['y'] - delta_y):
-                return label
-            else:
-                continue
-    return None
-
-
-def find_right_label(control, labels, delta_x, delta_y):
-	for label in labels:
-		if (control['topleft']['y'] + delta_y > label['topleft']['y']) and (label['topleft']['y'] > control['topleft']['y'] - delta_y):
-			if (control['bottomright']['x'] + delta_x > label['topleft']['x']) and (label['topleft']['x'] > control['bottomright']['x'] - delta_x):
-				return label
-		else:
-			continue
-	return None
-
-
 def _get_overlap_rectangle_area(word, res):
-	#r1x1 r1y1 r1x2 r1y2
-	#r2x1 r2y1 r2x2 r2y2
-
 	r1l = min(word[0], word[2])
 	r1r = max(word[0], word[2])
 	r1t = min(word[1], word[3])
 	r1b = max(word[1], word[3])
 
-	#r2l, r2r, r2t, r2b = ...
 	r2l = min(res[0], res[2])
 	r2r = max(res[0], res[2])
 	r2t = min(res[1], res[3])
@@ -319,16 +253,21 @@ def merge_jsones_from_recursive_call(folders, results):
 	return results
 
 
-def get_captions_from_image(self, im):
+def get_captions_from_image(self, im, resize_coef):
 	"""
 	:param im: image as np array
+	:param resize_coef: for resizing an original image
 	:return: list of captured text from an image
 	"""
+	if self.FLAGS.model == DARKFLOW_HOME + "/cfg/nhl.cfg":
+		resize_coef = 1  # no need to resize that image
+		prepared = OCR.OCR.prepare_nhl_image_for_recognition(im=im, resize_coef=resize_coef)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared, resize_coef=resize_coef)
 	if self.FLAGS.ocr_gamma:
-		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma)
-		return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
-	prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im)
-	return OCR.OCR.get_boxes_from_prepared_image(im=prepared)
+		prepared = OCR.OCR.prepare_image_for_recognition_using_gammas(im=im, gamma=self.FLAGS.ocr_gamma, resize_coef=resize_coef)
+		return OCR.OCR.get_boxes_from_prepared_image(im=prepared, resize_coef=resize_coef)
+	prepared = OCR.OCR.prepare_image_for_recognition_using_thresholding(im=im, resize_coef=resize_coef)
+	return OCR.OCR.get_boxes_from_prepared_image(im=prepared, resize_coef=resize_coef)
 
 
 def postprocess(self, net_out, im, save = True):
@@ -356,7 +295,7 @@ def postprocess(self, net_out, im, save = True):
 		left, right, top, bot, mess, max_indx, confidence = boxResults
 		thick = 2 #int((h + w) // 300)
 		if self.FLAGS.json:
-			if confidence > 0.5:
+			if confidence > 0.25:
 				resultsForJSON.append({"label": mess, "confidence": float('%.2f' % confidence), "topleft": {"x": left, "y": top}, "bottomright": {"x": right, "y": bot}})
 			continue
 
@@ -372,17 +311,16 @@ def postprocess(self, net_out, im, save = True):
 	img_name = os.path.join(outfolder, os.path.basename(im))
 
 	if self.FLAGS.json:
-		captions = self.get_captions_from_image(imgcv)
+		resize_coefficient = 2
+		captions = self.get_captions_from_image(imgcv, resize_coefficient)
 		if resultsForJSON:
 			for result in resultsForJSON:
 				result = append_text_to_result_json(result, captions)
-			#find_labels_for_controls(resultsForJSON)
 
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		if self.FLAGS.recursive_models:
-			DARKFLOW_HOME = os.environ.get('DARKFLOW_HOME')
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
 			model_paths = [DARKFLOW_HOME + '/cfg/' + model + '.cfg' for model in models_from_cli]
 			crop_image_into_boxes(imgcv, outfolder, models_from_cli, resultsForJSON)
