@@ -14,60 +14,29 @@ import glob
 from skimage.filters import threshold_sauvola
 
 class OCR:
-    font_color = {
-        "white": [
-            np.array([228, 229, 230]),
-            np.array([246, 246, 246])
-        ],
-        "super_light_gray": [
-            np.array([170, 175, 184]),
-            np.array([189, 194, 202])
-        ],
-        "light_gray": [
-            np.array([193, 198, 206]),
-            np.array([197, 201, 209]),
-        ],
-        "dark_gray": [
-            np.array([135, 138, 145]),
-            np.array([138, 143, 154])
-        ],
-        "super_dark_gray": [
-            np.array([97, 104, 118]),
-            np.array([98, 105, 119])
-        ]
-    }
 
     @staticmethod
     def prepare_nhl_image_for_recognition(im, resize_coef):
         """
         Applies masks by fonts above to images from nhl and merges masked images for OCR.
-        Contains two helper methods -
-        1) first applies mask
-        2) the second one merges masks into result image
+        Contains helper methods that applies mask to image
         :param im: image as np array
         :param resize_coef: for resizing original image
-        :return: prepared image as PIL image
+        :return: prepared image as nparray
         """
-        def _apply_mask(im1, im2, mask=None):
-            im1, im2 = np.asarray(im1, dtype=np.uint8), np.asarray(im2, dtype=np.uint8)
-            return cv2.bitwise_and(im1, im2, mask=mask)
-
-        def _merge_masks(*args):
-            merged = args[0][0]
-            for i in range(1, len(args[0]) - 1):
-                merged = _apply_mask(merged, args[0][i])
-            return merged
-
-        resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
+        font_colors = [
+            np.array([95, 102, 115]),
+            np.array([246, 246, 246])
+        ]  # range from most darkest to most brightest font
+        resized = cv2.resize(im, None, fx=1, fy=1, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        masks = [cv2.inRange(rgb, OCR.font_color[color][0],
-                                  OCR.font_color[color][1]) for color in OCR.font_color.keys()]
-        masked_ims = [_apply_mask(image, image, mask) for mask in masks]
+        mask = cv2.inRange(rgb, font_colors[0], font_colors[1])
+        masked_im = cv2.bitwise_and(image, image, mask=mask)
 
-        inverted_masks = [cv2.bitwise_not(mask) for mask in masked_ims]
+        inverted = cv2.bitwise_not(masked_im)
 
-        return  Image.fromarray(_merge_masks(inverted_masks).astype(np.uint8))
+        return inverted
 
     @staticmethod
     def prepare_image_for_recognition_using_gammas(im, gamma, resize_coef):
