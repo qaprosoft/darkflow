@@ -150,20 +150,20 @@ def append_text_to_result_json(result, words):
 	Appends the captions from OCR into the labels from nnet
 	:param result: a single dict record from the nnet result
 	:param words: list of captions from OCR
-	:return result: modified value with caption text
+	:return result, unmerged_captions: typle with  modified value with caption text and captions that doesnt appear inside label
 	"""
 	result["caption"] = ''
+	unmerged_captions = ''
 	for word in words:
-		#print("caption: ", result["caption"])
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
 		if _get_overlap_rectangle_area(word[:4], rect) >= _get_area_of_word(word[:4]):
-			#print("word: ", word[-1])
-			#print("overlap :", _get_overlap_rectangle_area(word[:4], rect))
-			#print("word square :", _get_area_of_word(word[:4]))
 			result["caption"] = result["caption"] + " " + word[-1]
 			result["caption"] = result["caption"].lstrip()
-	return result
+		else:
+			unmerged_captions = unmerged_captions + ' ' + word[-1]
+			unmerged_captions = unmerged_captions.lstrip()
+	return result, unmerged_captions
 
 
 def _create_dir_if_not_exists(path):
@@ -313,9 +313,14 @@ def postprocess(self, net_out, im, save = True):
 	if self.FLAGS.json:
 		resize_coefficient = 2
 		captions = self.get_captions_from_image(imgcv, resize_coefficient)
+		unmerged_captions = ''
 		if resultsForJSON:
 			for result in resultsForJSON:
-				result = append_text_to_result_json(result, captions)
+				appended_result = append_text_to_result_json(result, captions)
+				result = appended_result[0]
+				unmerged_captions = appended_result[1]
+
+		resultsForJSON.append({"label": "tesseract", "caption": unmerged_captions})
 
 		textJSON = json.dumps(resultsForJSON)
 		textFile = os.path.splitext(img_name)[0] + ".json"
