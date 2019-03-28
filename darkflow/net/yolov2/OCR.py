@@ -11,7 +11,16 @@ from xml.etree.ElementTree import fromstring, Element
 import pytesseract as pts
 from PIL import Image
 import glob
-from skimage.filters import threshold_sauvola
+
+
+def _get_mask(im, colors):
+    return cv2.inRange(im, colors[0], colors[1])
+
+def _invert_image(im):
+    return cv2.bitwise_not(im)
+
+def _concat_images(src1, src2, mask=None):
+    return cv2.bitwise_and(src1, src2, mask)
 
 class OCR:
 
@@ -19,7 +28,6 @@ class OCR:
     def prepare_nhl_image_for_recognition(im, resize_coef):
         """
         Applies masks by fonts above to images from nhl and merges masked images for OCR.
-        Contains helper methods that applies mask to image
         :param im: image as np array
         :param resize_coef: for resizing original image
         :return: prepared image as nparray
@@ -28,15 +36,22 @@ class OCR:
             np.array([95, 102, 115]),
             np.array([246, 246, 246])
         ]  # range from most darkest to most brightest font
+        alert_colors = [
+            np.array([150, 1, 10]),
+            np.array([225, 25, 60])
+        ]
         resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask = cv2.inRange(rgb, font_colors[0], font_colors[1])
-        masked_im = cv2.bitwise_and(image, image, mask=mask)
 
-        inverted = cv2.bitwise_not(masked_im)
+        mask_font = _get_mask(rgb, font_colors)
+        masked_im = _concat_images(image, image, mask=mask_font)
+        mask_alert = _get_mask(rgb, alert_colors)
+        masked_alert = _concat_images(image, image, mask=mask_alert)
 
-        return inverted
+        inverted = _invert_image(masked_im)
+        inverted_alert = _invert_image(masked_alert)
+        return _concat_images(inverted, inverted_alert)
 
     @staticmethod
     def prepare_image_for_recognition_using_gammas(im, gamma, resize_coef):
