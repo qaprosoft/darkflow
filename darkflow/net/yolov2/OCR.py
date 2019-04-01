@@ -20,7 +20,7 @@ def _invert_image(im):
     return cv2.bitwise_not(im)
 
 def _concat_images(src1, src2, mask=None):
-    return cv2.bitwise_and(src1, src2, mask)
+    return cv2.bitwise_and(src1, src2, mask=mask)
 
 class OCR:
 
@@ -33,25 +33,26 @@ class OCR:
         :return: prepared image as nparray
         """
         font_colors = [
-            np.array([95, 102, 115]),
+            np.array([80, 95, 105]),
             np.array([246, 246, 246])
         ]  # range from most darkest to most brightest font
         alert_colors = [
             np.array([150, 1, 10]),
-            np.array([225, 25, 60])
+            np.array([245, 25, 60])
         ]
         resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        mask_font = _get_mask(rgb, font_colors)
-        masked_im = _concat_images(image, image, mask=mask_font)
         mask_alert = _get_mask(rgb, alert_colors)
+        mask_font = _get_mask(rgb, font_colors)
+
+        masked_im = _concat_images(image, image, mask=mask_font)
         masked_alert = _concat_images(image, image, mask=mask_alert)
 
-        inverted = _invert_image(masked_im)
         inverted_alert = _invert_image(masked_alert)
-        return _concat_images(inverted, inverted_alert)
+        inverted = _invert_image(masked_im)
+        return Image.fromarray(_concat_images(inverted_alert, inverted).astype(np.uint8))
 
     @staticmethod
     def prepare_image_for_recognition_using_gammas(im, gamma, resize_coef):
@@ -98,7 +99,7 @@ class OCR:
         :param resize_coef: for resizing into original
         :return: a list of boxes, like ["top (int), left (int), right (int), bottom (int), confidence (str), text (str)",]
         """
-        pts_data = pts.image_to_data(image=im)
+        pts_data = pts.image_to_data(image=im, config="-l eng")
         entries = pts_data.split("\n")
         raw_boxes = [entry.split("\t")[6:] for entry in entries
                      if entry.split("\t")[-1] not in ('', ' ') and len(entry.split("\t")[6:]) == 6][1:]
