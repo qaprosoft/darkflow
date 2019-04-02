@@ -259,7 +259,7 @@ def get_captions_from_image(self, im, resize_coef):
 	:param resize_coef: for resizing an original image
 	:return: list of captured text from an image
 	"""
-	if self.FLAGS.model == DARKFLOW_HOME + "/cfg/nhl.cfg":
+	if self.FLAGS.model == DARKFLOW_HOME + "/cfg/nhl.cfg" and not self.FLAGS.ocr_gamma:
 		resize_coef = 1  # no need to resize that image
 		prepared = OCR.OCR.prepare_nhl_image_for_recognition(im=im, resize_coef=resize_coef)
 		return OCR.OCR.get_boxes_from_prepared_image(im=prepared, resize_coef=resize_coef)
