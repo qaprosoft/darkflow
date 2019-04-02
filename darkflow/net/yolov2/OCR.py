@@ -32,27 +32,32 @@ class OCR:
         :param resize_coef: for resizing original image
         :return: prepared image as nparray
         """
-        font_colors = [
-            np.array([80, 95, 105]),
-            np.array([246, 246, 246])
-        ]  # range from most darkest to most brightest font
-        alert_colors = [
-            np.array([150, 1, 10]),
-            np.array([245, 25, 60])
-        ]
+        colors = {
+            "regular": [
+                np.array([80, 95, 105]),
+                np.array([246, 246, 246])
+            ],
+            "alert": [
+                np.array([150, 1, 10]),
+                np.array([245, 25, 60])
+            ],
+            "white": [
+                np.array([180, 180, 180]),
+                np.array([255, 255, 255])
+            ]
+        }
         resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        mask_alert = _get_mask(rgb, alert_colors)
-        mask_font = _get_mask(rgb, font_colors)
+        masks = [_get_mask(rgb, colors[type]) for type in colors.keys()]
+        masked_images = [_concat_images(image, image, mask=mask) for mask in masks]
+        inverted_images = [_invert_image(masked_image) for masked_image in masked_images]
 
-        masked_im = _concat_images(image, image, mask=mask_font)
-        masked_alert = _concat_images(image, image, mask=mask_alert)
-
-        inverted_alert = _invert_image(masked_alert)
-        inverted = _invert_image(masked_im)
-        return Image.fromarray(_concat_images(inverted_alert, inverted).astype(np.uint8))
+        result_im = inverted_images[0]
+        for i in range(1, len(inverted_images)):
+            result_im = _concat_images(result_im, inverted_images[i])
+        return Image.fromarray(result_im.astype(np.uint8))
 
     @staticmethod
     def prepare_image_for_recognition_using_gammas(im, gamma, resize_coef):
