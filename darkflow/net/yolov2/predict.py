@@ -157,7 +157,7 @@ def append_text_to_result_json(result, words):
 	for word in words:
 		left, top, right, bot = result["topleft"]["x"], result["topleft"]["y"], result["bottomright"]["x"], result["bottomright"]["y"]
 		rect = left, top, right, bot
-		if _get_overlap_rectangle_area(word[:4], rect) >= _get_area_of_word(word[:4]):
+		if _get_overlap_rectangle_area(word[:4], rect) / _get_area_of_word(word[:4]) >= 0.6:
 			result["caption"] = result["caption"] + " " + word[-1]
 			result["caption"] = result["caption"].lstrip()
 		else:
