@@ -15,7 +15,7 @@ from joblib import Parallel, delayed
 import subprocess
 from multiprocessing import Pool
 from functools import partial
-
+from pprint import pprint
 
 DARKFLOW_HOME = os.environ.get('DARKFLOW_HOME')
 
@@ -178,20 +178,18 @@ def crop_image_into_boxes(im, outdir, labels, result_list):
 	:param outdir: path where the crops is written
 	:param result_list: result dict with captions
 	"""
-	result_entry = result_list[0]
-	x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
-	y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
-	cropped = im[y_begin:y_end, x_begin:x_end]
-	result_path = ""
-	if result_entry['label'] in labels:
-		result_path = os.path.join(outdir, result_entry['label'])
-		_create_dir_if_not_exists(result_path)
-	cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
-	if len(result_list) == 1:
+	for result_entry in result_list:
+		if 'tesseract' in result_entry['label']:
+			continue
+		x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
+		y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
+		cropped = im[y_begin:y_end, x_begin:x_end]
+		result_path = ""
+		if result_entry['label'] in labels:
+			result_path = os.path.join(outdir, result_entry['label'])
+			_create_dir_if_not_exists(result_path)
+		cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
 		cv2.imwrite(cropped_path, cropped)
-		return
-	cv2.imwrite(cropped_path, cropped)
-	return crop_image_into_boxes(im, outdir, labels, result_list[1:])
 
 
 def get_list_of_label_types(result_list):
@@ -223,11 +221,6 @@ def merge_jsones_from_recursive_call(folders, results):
 	:param results: result list from first non-recursive call
 	:return: merged list of results
 	"""
-	models_to_labels = {
-		"team": "label",
-		"logo": "logo"
-	}
-
 	path_splitter = '/' if os.name == 'posix' else '\\'
 	for folder in folders:
 		out_folder = os.path.join(folder, 'out')
