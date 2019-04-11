@@ -179,6 +179,11 @@ def crop_image_into_boxes(im, outdir, labels, result_list):
 	:param result_list: result dict with captions
 	"""
 	for result_entry in result_list:
+		"""
+		We have "tesseract" label in ResultsForJSON w/o any coordinates
+		which might be cause of failures when we try to crop image or 
+		merge results into ResultsForJSON, so just skip it.
+		"""
 		if 'tesseract' in result_entry['label']:
 			continue
 		x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
@@ -222,27 +227,38 @@ def merge_jsones_from_recursive_call(folders, results):
 	:return: merged list of results
 	"""
 	path_splitter = '/' if os.name == 'posix' else '\\'
-	for folder in folders:
-		out_folder = os.path.join(folder, 'out')
-		json_paths = get_path_entries(lambda x: x.path.endswith('.json'), out_folder)
-		json_names = [json_path.split(path_splitter)[-1].split('.')[0] for json_path in json_paths]
-		jsones = dict()
-		for json_name in json_names:
-			for json_path in json_paths:
-				if json_name in json_path:
-					jsones[json_name] = get_obj_from_json(json_path)
+	try:
+		for folder in folders:
+			out_folder = os.path.join(folder, 'out')
+			json_paths = get_path_entries(lambda x: x.path.endswith('.json'), out_folder)
+			json_names = [json_path.split(path_splitter)[-1].split('.')[0] for json_path in json_paths]
+			jsones = dict()
+			for json_name in json_names:
+				for json_path in json_paths:
+					if json_name in json_path:
+						jsones[json_name] = get_obj_from_json(json_path)
 
-		for result in results:
-			model = folder.split(path_splitter)[-1]
-			for k in jsones.keys():
-				topleft_x, topleft_y = int(k.split('-')[0]), int(k.split('-')[1])
-				botright_x, botright_y = int(k.split('-')[2]), int(k.split('-')[3])
-				if topleft_x == result["topleft"]["x"] and topleft_y == result["topleft"]["y"] and botright_x == result['bottomright']['x'] and botright_y == result['bottomright']['y']:
-					result[model] = None
-					result[model] = jsones[k]
-					break
-
-		shutil.rmtree(folder)
+			for result in results:
+				model = folder.split(path_splitter)[-1]
+				for k in jsones.keys():
+					topleft_x, topleft_y = int(k.split('-')[0]), int(k.split('-')[1])
+					botright_x, botright_y = int(k.split('-')[2]), int(k.split('-')[3])
+					"""
+					We have "tesseract" label in ResultsForJSON w/o any coordinates
+					which might be cause of failures when we try to crop image or 
+					merge results into ResultsForJSON, so just skip it.
+					"""
+					if 'tesseract' in result['label']:
+						continue
+					if topleft_x == result["topleft"]["x"] and topleft_y == result["topleft"]["y"] and botright_x == result['bottomright']['x'] and botright_y == result['bottomright']['y']:
+						result[model] = None
+						result[model] = jsones[k]
+						break
+	except Exception as e:
+		print(e)
+	finally:
+		for folder in folders:
+			shutil.rmtree(folder)
 	return results
 
 
