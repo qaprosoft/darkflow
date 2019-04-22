@@ -240,7 +240,7 @@ def merge_jsones_from_recursive_call(folders, results):
 
 			for result in results:
 #				model = folder.split(path_splitter)[-1]
-                                model = 'recursive'
+				model = 'recursive'
 				for k in jsones.keys():
 					topleft_x, topleft_y = int(k.split('-')[0]), int(k.split('-')[1])
 					botright_x, botright_y = int(k.split('-')[2]), int(k.split('-')[3])
