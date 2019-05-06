@@ -163,6 +163,7 @@ def _append_gamecolor_to_result(im, result):
 	for key in gamecolors.keys():
 		if np.array_equal(im[y_center, x_center], gamecolors[key]):
 			result["caption"] = key
+			break
 	return result
 
 
@@ -172,13 +173,42 @@ def _append_teamcolor_to_result(im, result):
 	:param result: an entry of resultForJSON with 'teamcolor' label
 	"""
 	teamcolors = {
-		'mockup_black': [0, 0, 0]  # TODO: adjust colors here
+		'Avalanch': [151, 102, 44],
+		'Blues': [139, 55, 25],
+		'Blujacket': [108, 59, 11],
+		'Bruins': [37, 186, 254],
+		'Canadiens': [55, 35, 175],
+		'Canucks': [89, 140, 26],
+		'Capitals': [52, 30 ,208],
+		'Coyotes': [73, 57, 177],
+		'Devils': [47, 27, 207],
+		'Ducks': [13, 83, 251],
+		'Flames': [54, 26, 201],
+		'Flyers': [31, 77, 249],
+		'Golden Knights': [84, 118, 137],
+		'Huricanes': [10, 10, 205],
+		'Islanders': [143, 77, 10],
+		'Jets': [89, 53, 26],
+		'Kings': [176, 173, 165],
+		'Lightnings': [97, 41, 25],
+		'Oilers': [29, 75, 210],
+		'Panthers': [54, 26, 201],
+		'Penguins': [46, 187, 254],
+		'Predators': [37, 186, 254],
+		'Rangers': [144, 71, 26],
+		'Red Wings': [37, 186, 254],
+		'Sabres': [59, 10, 10],
+		'Senators': [54, 26, 201],
+		'Sharks': [119, 104, 26],
+		'Stars': [72, 105, 25],
+		'Wild': [60, 78, 31]
 	}
-	x_tap = int(abs((result["bottomright"]["x"] - result["topleft"]["x"]) * 0.1))  # 10% length of label
-	y_tap = int(abs((result["bottomright"]["y"] - result["topleft"]["y"]) * 0.1))  # 10% width of label
+	x_tap = int(abs((result["bottomright"]["x"] - result["topleft"]["x"]) * 0.1))  # at 10% length of label
+	y_tap = int(abs((result["bottomright"]["y"] - result["topleft"]["y"]) * 0.1))  # at 10% width of label
 	for key in teamcolors.keys():
 		if np.array_equal(im[y_tap, x_tap], teamcolors[key]):
 			result["caption"] = key
+			break
 	return result
 
 
