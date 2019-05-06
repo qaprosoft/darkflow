@@ -145,9 +145,31 @@ def _get_area_of_word(box):
 	return abs(box[2] - box[0]) * abs(box[3] - box[1])
 
 
-def append_text_to_result_json(result, words):
+def _append_gamecolor_to_result(im, result):
+	"""
+	Adjusts game status for 'tile' according to the color in bottom
+	via tap to the center of 'gamecolor' label
+	:param im: image as np.array, for the taps
+	:result: resultsForJSON entry to append
+	"""
+	gamecolors = {
+		'live': [32, 158, 246],
+		'future': [147, 144, 143],
+		'final': [68, 62, 62],
+		'critical': [27, 2, 208]
+	}
+	x_center = (result["topleft"]["x"] + result["bottomright"]["x"]) // 2
+	y_center = (result["topleft"]["y"] + result["bottomright"]["y"]) // 2
+	for key in gamecolors.keys():
+		if np.array_equal(im[y_center, x_center], gamecolors[key]):
+			result["caption"] = key
+	return result
+
+
+def append_text_to_result_json(im, result, words):
 	"""
 	Appends the captions from OCR into the labels from nnet
+	:param im: np.array, represents an image, for adjusting game and team color
 	:param result: a single dict record from the nnet result
 	:param words: list of captions from OCR
 	:return result, unmerged_captions: typle with  modified value with caption text and captions that doesnt appear inside label
@@ -163,6 +185,9 @@ def append_text_to_result_json(result, words):
 		else:
 			unmerged_captions = unmerged_captions + ' ' + word[-1]
 			unmerged_captions = unmerged_captions.lstrip()
+	# for 'tile' model adjust game and team colors
+	if result["label"] == 'gamecolor':
+		reuslt = _append_gamecolor_to_result(im, result)
 	return result, unmerged_captions
 
 
@@ -326,7 +351,7 @@ def postprocess(self, net_out, im, save = True):
 		unmerged_captions = ''
 		if resultsForJSON:
 			for result in resultsForJSON:
-				appended_result = append_text_to_result_json(result, captions)
+				appended_result = append_text_to_result_json(imgcv, result, captions)
 				result = appended_result[0]
 				unmerged_captions = appended_result[1]
 
