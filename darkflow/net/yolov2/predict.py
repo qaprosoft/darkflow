@@ -166,6 +166,22 @@ def _append_gamecolor_to_result(im, result):
 	return result
 
 
+def _append_teamcolor_to_result(im, result):
+	"""
+	:param im: image as np.array
+	:param result: an entry of resultForJSON with 'teamcolor' label
+	"""
+	teamcolors = {
+		'mockup_black': [0, 0, 0]  # TODO: adjust colors here
+	}
+	x_tap = int(abs((result["bottomright"]["x"] - result["topleft"]["x"]) * 0.1))  # 10% length of label
+	y_tap = int(abs((result["bottomright"]["y"] - result["topleft"]["y"]) * 0.1))  # 10% width of label
+	for key in teamcolors.keys():
+		if np.array_equal(im[y_tap, x_tap], teamcolors[key]):
+			result["caption"] = key
+	return result
+
+
 def append_text_to_result_json(im, result, words):
 	"""
 	Appends the captions from OCR into the labels from nnet
@@ -185,9 +201,11 @@ def append_text_to_result_json(im, result, words):
 		else:
 			unmerged_captions = unmerged_captions + ' ' + word[-1]
 			unmerged_captions = unmerged_captions.lstrip()
-	# for 'tile' model adjust game and team colors
+	# for 'tile' model adjust game and/or team colors
 	if result["label"] == 'gamecolor':
-		reuslt = _append_gamecolor_to_result(im, result)
+		_append_gamecolor_to_result(im, result)
+	if result["label"] == 'teamcolor':
+		_append_teamcolor_to_result(im, result)
 	return result, unmerged_captions
 
 
