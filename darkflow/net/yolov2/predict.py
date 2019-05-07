@@ -163,6 +163,48 @@ def _append_gamecolor_to_result(im, result):
 	for key in gamecolors.keys():
 		if np.array_equal(im[y_center, x_center], gamecolors[key]):
 			result["caption"] = key
+			break
+	return result
+
+
+def _append_teamcolor_to_result(im, result):
+	"""
+	:param im: image as np.array
+	:param result: an entry of resultForJSON with 'teamcolor' label
+	"""
+	teamcolors = {
+		'COL': [151, 102, 44],
+		'STL': [139, 55, 25],
+		'CBJ': [108, 59, 11],
+		'BOS, NSH, DET': [37, 186, 254],  # gamecolors are the same for these teams
+		'MON': [55, 35, 175],
+		'VAN': [89, 140, 26],
+		'WSH': [52, 30 ,208],
+		'ARI': [73, 57, 177],
+		'NJD': [47, 27, 207],
+		'ANA': [13, 83, 251],
+		'CGY, FLA, OTT': [54, 26, 201],  # gamecolors are the same for these teams
+		'PHI': [31, 77, 249],
+		'VGK': [84, 118, 137],
+		'CAR': [10, 10, 205],
+		'NYI': [143, 77, 10],
+		'WPG': [89, 53, 26],
+		'LAK': [176, 173, 165],
+		'TBL': [97, 41, 25],
+		'EDM': [29, 75, 210],
+		'PIT': [46, 187, 254],
+		'NYR': [144, 71, 26],
+		'BUF': [59, 10, 10],
+		'SJS': [119, 104, 26],
+		'DAL': [72, 105, 25],
+		'MIN': [60, 78, 31]
+	}
+	x_tap = int(abs((result["bottomright"]["x"] - result["topleft"]["x"]) * 0.1))  # at 10% length of label
+	y_tap = int(abs((result["bottomright"]["y"] - result["topleft"]["y"]) * 0.1))  # at 10% width of label
+	for key in teamcolors.keys():
+		if np.array_equal(im[y_tap, x_tap], teamcolors[key]):
+			result["caption"] = key
+			break
 	return result
 
 
@@ -185,9 +227,11 @@ def append_text_to_result_json(im, result, words):
 		else:
 			unmerged_captions = unmerged_captions + ' ' + word[-1]
 			unmerged_captions = unmerged_captions.lstrip()
-	# for 'tile' model adjust game and team colors
+	# for 'tile' model adjust game and/or team colors
 	if result["label"] == 'gamecolor':
-		reuslt = _append_gamecolor_to_result(im, result)
+		_append_gamecolor_to_result(im, result)
+	if result["label"] == 'teamcolor':
+		_append_teamcolor_to_result(im, result)
 	return result, unmerged_captions
 
 
