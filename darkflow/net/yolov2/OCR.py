@@ -13,43 +13,64 @@ from PIL import Image
 import glob
 
 
+nhl_colors = {
+    "regular": [
+        np.array([80, 95, 105]),
+        np.array([246, 246, 246])
+    ],
+    "alert": [
+        np.array([150, 1, 10]),
+        np.array([245, 25, 60])
+    ],
+    "white": [
+        np.array([180, 180, 180]),
+        np.array([255, 255, 255])
+    ]
+}
+
+
+espn_colors = {
+    "regular": [
+        np.array([116, 116, 116]),
+        np.array([234, 234, 234])
+    ],
+    "white": [
+        np.array([236, 236, 236]),
+        np.array([255, 255, 255])
+    ],
+    "alert": [
+        np.array([150, 1, 10]),
+        np.array([225, 25, 60])
+    ]
+}
+
+
 def _get_mask(im, colors):
     return cv2.inRange(im, colors[0], colors[1])
+
 
 def _invert_image(im):
     return cv2.bitwise_not(im)
 
+
 def _concat_images(src1, src2, mask=None):
     return cv2.bitwise_and(src1, src2, mask=mask)
+
 
 class OCR:
 
     @staticmethod
-    def prepare_nhl_image_for_recognition(im, resize_coef):
+    def prepare_image_for_recognition_using_masks(im, model, resize_coef):
         """
-        Applies masks by fonts above to images from nhl and merges masked images for OCR.
+        Applies masks by fonts above to images from nhl or espn and merges masked images for OCR.
         :param im: image as np array
         :param resize_coef: for resizing original image
         :return: prepared image as nparray
         """
-        colors = {
-            "regular": [
-                np.array([80, 95, 105]),
-                np.array([246, 246, 246])
-            ],
-            "alert": [
-                np.array([150, 1, 10]),
-                np.array([245, 25, 60])
-            ],
-            "white": [
-                np.array([180, 180, 180]),
-                np.array([255, 255, 255])
-            ]
-        }
         resized = cv2.resize(im, None, fx=resize_coef, fy=resize_coef, interpolation=cv2.INTER_LANCZOS4)
         image = np.array(resized)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
+        colors = nhl_colors if 'nhl' in model else espn_colors
         masks = [_get_mask(rgb, colors[type]) for type in colors.keys()]
         masked_images = [_concat_images(image, image, mask=mask) for mask in masks]
         inverted_images = [_invert_image(masked_image) for masked_image in masked_images]
