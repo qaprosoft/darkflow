@@ -257,13 +257,17 @@ def crop_image_into_boxes(im, outdir, labels, result_list):
 			continue
 		x_begin, x_end = result_entry['topleft']['x'], result_entry['bottomright']['x']
 		y_begin, y_end = result_entry['topleft']['y'], result_entry['bottomright']['y']
-		cropped = im[y_begin:y_end, x_begin:x_end]
+		# cropped = im[y_begin:y_end, x_begin:x_end]
 		result_path = ""
 		if result_entry['label'] in labels:
+			cropped = im[y_begin:y_end, x_begin:x_end]
 			result_path = os.path.join(outdir, result_entry['label'])
 			_create_dir_if_not_exists(result_path)
-		cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
-		cv2.imwrite(cropped_path, cropped)
+			cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
+			print('--------------------------------------------')
+			print(cropped_path)
+			print('--------------------------------------------')
+			cv2.imwrite(cropped_path, cropped)
 
 
 def get_list_of_label_types(result_list):
@@ -298,6 +302,7 @@ def merge_jsones_from_recursive_call(folders, results):
 	path_splitter = '/' if os.name == 'posix' else '\\'
 	try:
 		for folder in folders:
+			print(folder)
 			out_folder = os.path.join(folder, 'out')
 			json_paths = get_path_entries(lambda x: x.path.endswith('.json'), out_folder)
 			json_names = [json_path.split(path_splitter)[-1].split('.')[0] for json_path in json_paths]
@@ -404,9 +409,6 @@ def postprocess(self, net_out, im, save = True):
 				unmerged_captions = appended_result[1]
 
 		resultsForJSON.append({"label": "tesseract", "caption": unmerged_captions})
-
-		textJSON = json.dumps(resultsForJSON)
-		textFile = os.path.splitext(img_name)[0] + ".json"
 
 		if self.FLAGS.recursive_models:
 			models_from_cli = set(self.FLAGS.recursive_models.split(","))
