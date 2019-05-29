@@ -264,9 +264,6 @@ def crop_image_into_boxes(im, outdir, labels, result_list):
 			result_path = os.path.join(outdir, result_entry['label'])
 			_create_dir_if_not_exists(result_path)
 			cropped_path = "{}/{}-{}-{}-{}.png".format(result_path, x_begin, y_begin, x_end, y_end)
-			print('--------------------------------------------')
-			print(cropped_path)
-			print('--------------------------------------------')
 			cv2.imwrite(cropped_path, cropped)
 
 

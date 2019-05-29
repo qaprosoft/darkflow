@@ -39,8 +39,6 @@ def _apply_ocr_to_image(image_path, outdir):
 		output_dict['caption'] = output_dict['caption'] + ' ' + box[-1]
 	output_dict['caption'].lstrip()
 	json_name = os.path.splitext(image_path)[0].split(os.sep)[-1] + '.json'
-	print(json_name)
 	json_path = os.path.join(outdir, json_name)
-	print(json_path)
 	with open(json_path, 'w') as f:
 		json.dump(output_dict, f)
