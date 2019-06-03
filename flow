@@ -57,7 +57,6 @@ get_dir([FLAGS.imgdir, FLAGS.binary, FLAGS.backup, os.path.join(FLAGS.imgdir,'ou
 
 # run ocr-only recognition for a single label
 if 'label_hovered' in FLAGS.model:
-	print('There is no model "label_hovered", run ocr-only recognition')
 	op = OCRProcessor(FLAGS.imgdir)
 	op.process()
 	sys.exit(0)
